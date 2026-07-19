@@ -1,5 +1,5 @@
 import threading
-import resend
+import requests
 from django.conf import settings
 
 
@@ -12,11 +12,10 @@ def send_email(subject: str, body: str, to: list[str]) -> None:
     def _send():
         api_key = getattr(settings, 'RESEND_API_KEY', '')
         if not api_key:
-            print(f"[Email - Console Fallback] To: {to}\nSubject: {subject}\n{body}")
+            print(f"[Email - Console Fallback] To: {to}\nSubject: {subject}\n{body}", flush=True)
             return
+        
         try:
-            resend.api_key = api_key
-            # Since Resend sandbox only allows sending to the owner's registered email:
             original_to = ", ".join(to)
             sandbox_recipient = "vsbuvaneshraj06@gmail.com"
             
@@ -28,16 +27,26 @@ def send_email(subject: str, body: str, to: list[str]) -> None:
                 f"{body}"
             )
             
-            params = {
+            payload = {
                 "from": "FreshVerse Portal <onboarding@resend.dev>",
                 "to": [sandbox_recipient],
                 "subject": modified_subject,
                 "text": modified_body,
             }
-            response = resend.Emails.send(params)
-            print(f"Resend Success (Sandbox Forwarded): Original recipient: {original_to} | Sent to: {sandbox_recipient} | ID: {response.get('id', 'N/A')}")
+            
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            }
+            
+            response = requests.post("https://api.resend.com/emails", json=payload, headers=headers, timeout=10)
+            if response.status_code in [200, 201, 202]:
+                print(f"Resend Success (Sandbox Forwarded): Original recipient: {original_to} | Sent to: {sandbox_recipient} | Response: {response.text}", flush=True)
+            else:
+                print(f"Resend API Error (Status {response.status_code}) sending for {original_to}: {response.text}", flush=True)
         except Exception as e:
-            print(f"Resend Error sending sandbox email for {to}: {e}")
+            print(f"Resend Connection Exception sending for {to}: {e}", flush=True)
 
     thread = threading.Thread(target=_send, daemon=True)
     thread.start()

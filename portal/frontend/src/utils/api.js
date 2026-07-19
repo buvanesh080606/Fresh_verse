@@ -48,10 +48,12 @@ api.interceptors.response.use(
             return api(originalRequest);
           }
         } catch (refreshError) {
-          // If refresh fails, log out user
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          window.location.href = '/login';
+          // Only log out if it is an explicit auth error indicating the token is invalid/expired (e.g. 400 or 401)
+          if (refreshError.response?.status && [400, 401, 403].includes(refreshError.response.status)) {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            window.location.href = '/login';
+          }
         }
       }
     }

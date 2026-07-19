@@ -17,7 +17,10 @@ export const AuthProvider = ({ children }) => {
       if (response.data.profile) setProfile(response.data.profile);
     } catch (err) {
       console.error('Error fetching current user:', err);
-      logout();
+      // Only logout if it is a definitive 401/403 auth error
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        logout();
+      }
     } finally {
       setLoading(false);
     }

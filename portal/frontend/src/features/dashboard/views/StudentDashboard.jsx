@@ -125,7 +125,12 @@ const StudentDashboard = () => {
       // Update event capacity locally
       setEvents(prev => prev.map(e => e.id === eventId ? { ...e, max_seats: Math.max(0, e.max_seats - 1) } : e));
     } catch (err) {
-      alert(err.response?.data?.error || "Registration failed or already registered.");
+      const errMsg = err.response?.data?.error || 
+                     err.response?.data?.message || 
+                     err.response?.data?.detail || 
+                     (err.response?.data && typeof err.response.data === 'string' ? err.response.data : null) ||
+                     'Registration failed or already registered.';
+      alert(errMsg);
     }
   };
 

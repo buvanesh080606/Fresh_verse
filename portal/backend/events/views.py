@@ -83,7 +83,7 @@ class EventViewSet(viewsets.ModelViewSet):
 
             if not created:
                 if registration.status == 'registered':
-                    return Response({'message': 'You are already registered for this event.'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'error': 'You are already registered for this event.'}, status=status.HTTP_400_BAD_REQUEST)
                 else:
                     registration.status = 'registered'
                     registration.save()

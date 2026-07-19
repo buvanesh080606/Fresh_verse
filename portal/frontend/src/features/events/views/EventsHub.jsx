@@ -41,7 +41,12 @@ const EventsHub = () => {
       setMsg({ text: response.data.message || 'Successfully registered!', type: 'success' });
       fetchEvents(); // Reload list to update capacity & registration flag
     } catch (err) {
-      setMsg({ text: err.response?.data?.error || 'Registration failed.', type: 'error' });
+      const errMsg = err.response?.data?.error || 
+                     err.response?.data?.message || 
+                     err.response?.data?.detail || 
+                     (err.response?.data && typeof err.response.data === 'string' ? err.response.data : null) ||
+                     'Registration failed.';
+      setMsg({ text: errMsg, type: 'error' });
     } finally {
       setSubmittingId(null);
     }
@@ -55,7 +60,12 @@ const EventsHub = () => {
       setMsg({ text: response.data.message || 'Registration cancelled.', type: 'success' });
       fetchEvents();
     } catch (err) {
-      setMsg({ text: err.response?.data?.error || 'Cancellation failed.', type: 'error' });
+      const errMsg = err.response?.data?.error || 
+                     err.response?.data?.message || 
+                     err.response?.data?.detail || 
+                     (err.response?.data && typeof err.response.data === 'string' ? err.response.data : null) ||
+                     'Cancellation failed.';
+      setMsg({ text: errMsg, type: 'error' });
     } finally {
       setSubmittingId(null);
     }

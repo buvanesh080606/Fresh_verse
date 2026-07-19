@@ -71,7 +71,7 @@ def parse_document_with_gemini(file_bytes, mime_type, filename):
 
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel(model_name='gemini-2.5-flash')
+        model = genai.GenerativeModel(model_name='gemini-1.5-flash')
         file_part = {"mime_type": mime_type, "data": file_bytes}
         prompt = (
             f"Analyze this timetable document named '{filename}'. "
@@ -90,6 +90,7 @@ def parse_document_with_gemini(file_bytes, mime_type, filename):
         text = text.strip()
         return json.loads(text)
     except Exception as e:
+        print(f"Gemini Vision Error: {e}", flush=True)
         mock_data = generate_mock_extracted_data(filename)
         mock_data['error'] = f"Gemini Extraction failed: {str(e)}"
         return mock_data

@@ -221,7 +221,7 @@ def get_gemini_campus_response(query, user, chat_history=[]):
         
         # Configure model
         model = genai.GenerativeModel(
-            model_name='gemini-2.5-flash',
+            model_name='gemini-1.5-flash',
             system_instruction=system_instruction
         )
         
@@ -232,6 +232,7 @@ def get_gemini_campus_response(query, user, chat_history=[]):
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
+        print(f"Gemini Chat Error: {e}", flush=True)
         return mock_gemini_response(query, db_context)
 
 def mock_gemini_response(query, db_context):

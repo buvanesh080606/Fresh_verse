@@ -5,8 +5,8 @@ import api, { getMediaUrl } from '../../../utils/api';
 import GlassContainer from '../../../components/ui/GlassContainer';
 import SparkleLogo from '../../../components/ui/SparkleLogo';
 import { 
-  BookOpen, Clock, Megaphone, Bell, Calendar, 
-  MapPin, Bus, User, ArrowUpRight, Home, Sparkles, Send, MessageSquare, TrendingUp,
+  BookOpen, Clock, Megaphone, Calendar, 
+  MapPin, User, Send, MessageSquare, TrendingUp,
   Coffee, Utensils, Trophy, Users
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';

@@ -306,15 +306,21 @@ class TimetableViewSet(viewsets.ModelViewSet):
                 if is_break_or_lunch and validated_data.get('start_time'):
                     upsert_lookup['start_time'] = validated_data['start_time']
 
-                timetable_obj, _ = Timetable.objects.update_or_create(
-                    **upsert_lookup,
-                    defaults=validated_data
-                )
-                created_objects.append(timetable_obj)
+                try:
+                    timetable_obj, _ = Timetable.objects.update_or_create(
+                        **upsert_lookup,
+                        defaults=validated_data
+                    )
+                    created_objects.append(timetable_obj)
+                except Exception as db_err:
+                    print(f"Database error saving row {idx}: {db_err}", flush=True)
+                    errors.append({'index': idx, 'errors': {'database': str(db_err)}})
             else:
+                print(f"Validation error on row {idx}: {serializer.errors}", flush=True)
                 errors.append({'index': idx, 'errors': serializer.errors})
 
         if errors:
+            print(f"Timetable Bulk Save Finished with {len(errors)} errors: {errors}", flush=True)
             return Response({
                 'message': f'Bulk save completed with {len(errors)} errors.',
                 'errors': errors,

@@ -282,8 +282,15 @@ def mock_gemini_response(query, db_context):
         if event_lines:
             return "\n".join(event_lines[:5])
 
+    # Announcements / circulars / notices
+    if any(k in query_lower for k in ['announcement', 'circular', 'news', 'placement', 'notice']):
+        ann_lines = [l for l in lines if 'circular' in l.lower() or 'announcement' in l.lower() or '[academic]' in l.lower() or '[placement]' in l.lower() or '[general]' in l.lower()]
+        if ann_lines:
+            return "Here are the recent announcements I found:\n" + "\n".join(ann_lines[:5])
+
     # General keyword matching fallback
-    keywords = [w for w in query_lower.split() if len(w) > 3]
+    keywords = [re.sub(r'[^\w]', '', w) for w in query_lower.split()]
+    keywords = [w for w in keywords if len(w) > 3]
     for line in lines:
         if any(kw in line.lower() for kw in keywords):
             relevant_lines.append(line)

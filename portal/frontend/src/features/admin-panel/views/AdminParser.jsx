@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../../../utils/api';
 import GlassContainer from '../../../components/ui/GlassContainer';
 import { 
@@ -7,7 +7,63 @@ import {
   CalendarRange, HelpCircle
 } from 'lucide-react';
 
+// Image compression helper to avoid HTTP 413 Payload Too Large on high-res mobile photos
+const compressImage = (file) => {
+  return new Promise((resolve) => {
+    if (!file.type.startsWith('image/')) {
+      resolve(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        const MAX_DIM = 1600;
+        if (width > MAX_DIM || height > MAX_DIM) {
+          if (width > height) {
+            height = Math.round((height * MAX_DIM) / width);
+            width = MAX_DIM;
+          } else {
+            width = Math.round((width * MAX_DIM) / height);
+            height = MAX_DIM;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile.size < file.size ? compressedFile : file);
+            } else {
+              resolve(file);
+            }
+          },
+          'image/jpeg',
+          0.85
+        );
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
 const AdminParser = () => {
+  const fileInputRef = useRef(null);
+  
   // Session storage state initialization to prevent data loss on tab navigation
   const [gridData, setGridData] = useState(() => {
     const saved = sessionStorage.getItem('ocr_grid_data');
@@ -125,12 +181,15 @@ const AdminParser = () => {
     }
 
     setParsing(true);
-    setMessage({ text: '', type: '' });
+    setMessage({ text: 'Compressing image for optimal upload...', type: '' });
     
-    const formData = new FormData();
-    formData.append('file', file);
-
     try {
+      const fileToUpload = await compressImage(file);
+      setMessage({ text: 'Uploading and parsing document...', type: '' });
+
+      const formData = new FormData();
+      formData.append('file', fileToUpload);
+
       const response = await api.post('ai/parse-document/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -339,16 +398,17 @@ const AdminParser = () => {
             <div className="flex flex-col items-center gap-4">
               <input
                 type="file"
+                ref={fileInputRef}
                 onChange={handleFileChange}
-                id="ocr-file-upload"
                 className="hidden"
               />
-              <label
-                htmlFor="ocr-file-upload"
-                className="px-5 py-2.5 rounded-xl border border-brand-border dark:border-brand-border-dark/45 text-xs font-bold text-brand-text dark:text-brand-text-dark hover:bg-brand-border/20 transition-all cursor-pointer"
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-5 py-3 md:py-2.5 rounded-xl border border-brand-border dark:border-brand-border-dark/45 text-xs font-bold text-brand-text dark:text-brand-text-dark hover:bg-brand-border/20 transition-all cursor-pointer min-h-[44px] flex items-center justify-center"
               >
-                {file ? file.name : 'Select File from Computer'}
-              </label>
+                {file ? file.name : 'Select File from Computer / Device'}
+              </button>
 
               {file && (
                 <button
@@ -414,10 +474,10 @@ const AdminParser = () => {
                     </div>
                     <button
                       onClick={() => handleClearTimetable(sched.department, sched.semester, sched.section, sched.batch)}
-                      className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 transition cursor-pointer"
+                      className="p-3 md:p-1.5 rounded-xl md:rounded-lg text-rose-500 hover:bg-rose-500/10 transition cursor-pointer flex items-center justify-center min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0"
                       title="Clear this schedule completely"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-5 h-5 md:w-3.5 md:h-3.5" />
                     </button>
                   </div>
                 ))}
@@ -552,9 +612,9 @@ const AdminParser = () => {
                     <td className="py-2 px-1 text-center">
                       <button
                         onClick={() => removeRow(rIdx)}
-                        className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                        className="p-3 md:p-1.5 text-red-500 hover:bg-red-500/10 rounded-xl md:rounded-lg transition-colors cursor-pointer flex items-center justify-center min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 mx-auto"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-5 h-5 md:w-4 md:h-4" />
                       </button>
                     </td>
                   </tr>

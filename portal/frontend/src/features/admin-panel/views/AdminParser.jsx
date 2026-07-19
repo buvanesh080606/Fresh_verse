@@ -274,10 +274,10 @@ const AdminParser = () => {
         // Enrich rows with selected department, semester, section, and batch before committing
         const enrichedGrid = gridData.map(row => ({
           ...row,
-          department: selectedDept,
-          semester: selectedSemester,
-          section: selectedSection,
-          batch: selectedBatch
+          department: row.department || selectedDept,
+          semester: row.semester || selectedSemester,
+          section: row.section || selectedSection,
+          batch: row.batch || selectedBatch
         }));
 
         const response = await api.post('academic/timetable/bulk-save/', enrichedGrid);

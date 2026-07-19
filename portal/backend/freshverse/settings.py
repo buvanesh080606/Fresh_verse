@@ -209,15 +209,9 @@ MOCK_AUTH_MODE = os.getenv('MOCK_AUTH_MODE', 'False') == 'True'
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
 
-# Email Configuration
-EMAIL_HOST = os.getenv('EMAIL_HOST')
-if EMAIL_HOST:
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
-    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
-    EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False') == 'True'
-    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
-    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-else:
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Email Configuration (legacy SMTP fallback - kept for reference)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Resend API (primary email service - works on Render free tier via HTTPS)
+RESEND_API_KEY = os.getenv('RESEND_API_KEY', '')
 

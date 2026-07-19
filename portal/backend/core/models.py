@@ -85,28 +85,9 @@ class Notification(models.Model):
         super().save(*args, **kwargs)
         if is_new:
             try:
-                import threading
-                from django.core.mail import send_mail
-                from django.conf import settings
-                
+                from utils.email import send_email
                 subject = f"[FreshVerse] {self.title}"
                 body = f"Hello {self.user.first_name or 'User'},\n\nYou have a new notification on your FreshVerse dashboard:\n\n{self.message}\n\nBest regards,\nFreshVerse Admin Team"
-                
-                # Send email in a background thread to prevent blocking main database transaction
-                def send_email_with_logs():
-                    try:
-                        send_mail(
-                            subject,
-                            body,
-                            settings.EMAIL_HOST_USER,
-                            [self.user.email],
-                            fail_silently=False
-                        )
-                        print(f"SMTP Success: Sent notification email to {self.user.email}")
-                    except Exception as email_err:
-                        print(f"SMTP Error sending to {self.user.email}: {email_err}")
-
-                email_thread = threading.Thread(target=send_email_with_logs)
-                email_thread.start()
+                send_email(subject, body, [self.user.email])
             except Exception as e:
-                print(f"Failed to initiate email notification thread to {self.user.email}: {e}")
+                print(f"Failed to send notification email to {self.user.email}: {e}")

@@ -14,7 +14,7 @@ from academic.models import StudentProfile
 from core.models import Hostel, BusRoute
 from utils.permissions import IsAdminUserRole, IsSuperAdminUser
 
-from django.core.mail import send_mail
+from utils.email import send_email
 
 User = get_user_model()
 
@@ -54,23 +54,12 @@ def notify_original_superadmin(actor, action_type, target=None, target_descripti
             f"FreshVerse AI Security System"
         )
         
-    from_email = getattr(settings, 'EMAIL_HOST_USER', '') or 'noreply@freshverse.edu'
-    
     # Collect all recipient emails (the original superadmin email and any active admins in the DB)
     recipients = {'vsbuvaneshraj06@gmail.com'}
     admins = User.objects.filter(role='admin', is_active=True)
     for admin in admins:
         recipients.add(admin.email)
-        
-    def send_original_superadmin_email():
-        try:
-            send_mail(subject, message, from_email, list(recipients), fail_silently=False)
-            print(f"SMTP Success: Sent admin activity alert to {list(recipients)}")
-        except Exception as email_err:
-            print(f"SMTP Error sending admin activity alert: {email_err}")
-
-    email_thread = threading.Thread(target=send_original_superadmin_email)
-    email_thread.start()
+    send_email(subject, message, list(recipients))
 
 def notify_superadmin_new_registration(new_user):
     role_label = 'Administrator' if new_user.role == 'admin' else 'Student'
@@ -102,21 +91,10 @@ def notify_superadmin_new_registration(new_user):
         f"FreshVerse AI Security System"
     )
     
-    from_email = getattr(settings, 'EMAIL_HOST_USER', '') or 'noreply@freshverse.edu'
     recipients = {'vsbuvaneshraj06@gmail.com'}
     for admin in admins:
         recipients.add(admin.email)
-        
-    # Send email in a background thread to prevent UI lag
-    def send_new_registration_email():
-        try:
-            send_mail(subject, message, from_email, list(recipients), fail_silently=False)
-            print(f"SMTP Success: Sent registration notification to {list(recipients)}")
-        except Exception as email_err:
-            print(f"SMTP Error sending registration notification: {email_err}")
-
-    email_thread = threading.Thread(target=send_new_registration_email)
-    email_thread.start()
+    send_email(subject, message, list(recipients))
 
 class GoogleAuthView(APIView):
     permission_classes = [permissions.AllowAny]

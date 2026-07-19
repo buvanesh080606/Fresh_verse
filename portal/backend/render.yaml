@@ -1,0 +1,30 @@
+services:
+  # Render Web Service for Django Backend
+  - type: web
+    name: freshverse-backend
+    runtime: python
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --no-input"
+    startCommand: "python manage.py migrate && gunicorn freshverse.wsgi:application"
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DB_NAME
+        value: "freshverse_db"
+      - key: DB_USER
+        value: "root"
+      - key: DB_PASSWORD
+        value: "Buvanesh@2006"
+      - key: DB_HOST
+        value: "127.0.0.1"
+      - key: DB_PORT
+        value: "3306"
+      - key: MOCK_AUTH_MODE
+        value: "True"
+      - key: GEMINI_API_KEY
+        sync: true
+      - key: GOOGLE_CLIENT_ID
+        sync: true
+      - key: GOOGLE_CLIENT_SECRET
+        sync: true

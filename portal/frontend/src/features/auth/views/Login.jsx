@@ -47,6 +47,7 @@ const Login = () => {
   }, []);
 
   // 2. Load Google Script & Initialize
+  // 2. Load Google Script & Initialize
   useEffect(() => {
     if (googleClientId) {
       // Dynamically load Google GSI client library if not already present
@@ -59,17 +60,22 @@ const Login = () => {
         document.body.appendChild(script);
       }
 
+      let resizeTimer;
       const initGoogle = () => {
         if (window.google) {
           const btn = document.getElementById('googleRealBtn');
           if (btn) {
+            const containerWidth = btn.parentElement ? btn.parentElement.clientWidth : 380;
+            // Google GSI button width must be between 200 and 400 pixels
+            const btnWidth = Math.max(200, Math.min(380, containerWidth || (window.innerWidth - 64)));
+
             window.google.accounts.id.initialize({
               client_id: googleClientId,
               callback: handleRealGoogleResponse,
             });
             window.google.accounts.id.renderButton(
               btn,
-              { theme: 'outline', size: 'large', width: 380 }
+              { theme: 'outline', size: 'large', width: btnWidth }
             );
           } else {
             setTimeout(initGoogle, 100);
@@ -78,7 +84,19 @@ const Login = () => {
           setTimeout(initGoogle, 100);
         }
       };
+
+      const handleResize = () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          initGoogle();
+        }, 150);
+      };
+
       initGoogle();
+      window.addEventListener('resize', handleResize);
+      return () => {
+        window.removeEventListener('resize', handleResize);
+      };
     }
   }, [googleClientId]);
 
@@ -141,30 +159,30 @@ const Login = () => {
       className="flex min-h-screen w-screen items-center justify-center bg-cover bg-center bg-no-repeat px-4 py-12 transition-colors duration-300"
       style={{ backgroundImage: "url('/login-bg.png')" }}
     >
-      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-center px-2 sm:px-4">
 
         {/* Left branding */}
-        <div className="space-y-8 text-left p-4 md:p-8">
+        <div className="space-y-4 sm:space-y-6 md:space-y-8 text-left p-2 sm:p-4 md:p-8">
           <div className="flex items-center gap-3">
             <div className="p-1 bg-[#F3D9CC] rounded-2xl border border-accent/20 flex items-center justify-center">
-              <FreshverseLogo size={44} />
+              <FreshverseLogo size={36} className="md:w-11 md:h-11 w-9 h-9" />
             </div>
-            <span className="text-3xl font-extrabold text-brand-text dark:text-brand-text-dark tracking-tight">
+            <span className="text-2xl md:text-3xl font-extrabold text-brand-text dark:text-brand-text-dark tracking-tight">
               FreshVerse
             </span>
           </div>
 
-          <div className="space-y-4">
-            <h1 className="text-5xl md:text-6xl font-black tracking-tight text-brand-text dark:text-brand-text-dark leading-[1.1]">
+          <div className="space-y-3 md:space-y-4">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-brand-text dark:text-brand-text-dark leading-[1.1]">
               Everything You Need.<br />
               <span className="text-accent">From Day One.</span>
             </h1>
-            <p className="text-base text-brand-text/75 dark:text-brand-text-dark/75 max-w-md leading-relaxed">
+            <p className="text-sm sm:text-base text-brand-text/75 dark:text-brand-text-dark/75 max-w-md leading-relaxed hidden sm:block">
               Navigate your campus with confidence. Access timetables, locate classrooms and faculty, explore campus services, and stay updated—all in one place.
             </p>
           </div>
 
-          <div className="pt-4 border-t border-brand-border/20 dark:border-brand-border-dark/20 max-w-md">
+          <div className="pt-4 border-t border-brand-border/20 dark:border-brand-border-dark/20 max-w-md hidden sm:block">
             <p className="text-xs uppercase tracking-wider font-extrabold text-brand-text/60 dark:text-brand-text-dark/60 mb-3">
               Trusted by
             </p>

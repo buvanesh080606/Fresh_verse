@@ -201,59 +201,64 @@ const StudentDashboard = () => {
         </div>
       </div>
 
-      {/* Grid containing 4 stats counters */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <GlassContainer className="bg-white dark:bg-brand-card-dark p-4 flex items-center justify-between border border-brand-border/20 dark:border-brand-border-dark/15 rounded-3xl shadow-sm hover:scale-[1.01] transition-all duration-200">
+      {/* Grid containing 4 stats counters - Responsive columns: 1 on mobile, 2 on tablet/laptop, 4 on large screens */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        
+        {/* Card 1: Total Students */}
+        <div className="glass-effect rounded-3xl shadow-sm border border-brand-border/20 dark:border-brand-border-dark/15 p-5 transition-all duration-300 hover:scale-[1.01] bg-white dark:bg-brand-card-dark flex flex-col justify-between gap-4 min-h-[9rem]">
+          <div className="p-2.5 bg-accent/10 rounded-2xl text-accent self-start">
+            <User className="w-5 h-5" />
+          </div>
           <div>
-            <p className="text-[10px] uppercase font-bold tracking-wider text-brand-text/75 dark:text-brand-text-dark/75">Total Students</p>
-            <h3 className="text-2xl font-black text-brand-text dark:text-brand-text-dark mt-1">{stats.total_students}</h3>
+            <p className="text-[10px] uppercase font-bold tracking-wider text-brand-text/50 dark:text-brand-text-dark/50">Total Students</p>
+            <h3 className="text-2xl sm:text-3xl font-black text-brand-text dark:text-brand-text-dark mt-1">{stats.total_students}</h3>
             <span className="text-[10px] text-green-500 font-bold flex items-center gap-1 mt-1">
               <TrendingUp className="w-3 h-3" /> ↑ 12.5% from last month
             </span>
           </div>
-          <div className="p-3 bg-accent/10 rounded-2xl text-accent">
-            <User className="w-5 h-5" />
-          </div>
-        </GlassContainer>
+        </div>
  
-        <GlassContainer className="bg-white dark:bg-brand-card-dark p-4 flex items-center justify-between border border-brand-border/20 dark:border-brand-border-dark/15 rounded-3xl shadow-sm hover:scale-[1.01] transition-all duration-200">
+        {/* Card 2: Upcoming Events */}
+        <div className="glass-effect rounded-3xl shadow-sm border border-brand-border/20 dark:border-brand-border-dark/15 p-5 transition-all duration-300 hover:scale-[1.01] bg-white dark:bg-brand-card-dark flex flex-col justify-between gap-4 min-h-[9rem]">
+          <div className="p-2.5 bg-accent/10 rounded-2xl text-accent self-start">
+            <Calendar className="w-5 h-5" />
+          </div>
           <div>
-            <p className="text-[10px] uppercase font-bold tracking-wider text-brand-text/75 dark:text-brand-text-dark/75">Upcoming Events</p>
-            <h3 className="text-2xl font-black text-brand-text dark:text-brand-text-dark mt-1">{stats.upcoming_events}</h3>
+            <p className="text-[10px] uppercase font-bold tracking-wider text-brand-text/50 dark:text-brand-text-dark/50">Upcoming Events</p>
+            <h3 className="text-2xl sm:text-3xl font-black text-brand-text dark:text-brand-text-dark mt-1">{stats.upcoming_events}</h3>
             <span className="text-[10px] text-green-500 font-bold flex items-center gap-1 mt-1">
               <TrendingUp className="w-3 h-3" /> ↑ 8.2% from last month
             </span>
           </div>
-          <div className="p-3 bg-accent/10 rounded-2xl text-accent">
-            <Calendar className="w-5 h-5" />
-          </div>
-        </GlassContainer>
+        </div>
  
-        <GlassContainer className="bg-white dark:bg-brand-card-dark p-4 flex items-center justify-between border border-brand-border/20 dark:border-brand-border-dark/15 rounded-3xl shadow-sm hover:scale-[1.01] transition-all duration-200">
+        {/* Card 3: Announcements */}
+        <div className="glass-effect rounded-3xl shadow-sm border border-brand-border/20 dark:border-brand-border-dark/15 p-5 transition-all duration-300 hover:scale-[1.01] bg-white dark:bg-brand-card-dark flex flex-col justify-between gap-4 min-h-[9rem]">
+          <div className="p-2.5 bg-accent/10 rounded-2xl text-accent self-start">
+            <Megaphone className="w-5 h-5" />
+          </div>
           <div>
-            <p className="text-[10px] uppercase font-bold tracking-wider text-brand-text/75 dark:text-brand-text-dark/75">Announcements</p>
-            <h3 className="text-2xl font-black text-brand-text dark:text-brand-text-dark mt-1">{stats.announcements}</h3>
+            <p className="text-[10px] uppercase font-bold tracking-wider text-brand-text/50 dark:text-brand-text-dark/50">Announcements</p>
+            <h3 className="text-2xl sm:text-3xl font-black text-brand-text dark:text-brand-text-dark mt-1">{stats.announcements}</h3>
             <span className="text-[10px] text-green-500 font-bold flex items-center gap-1 mt-1">
               <TrendingUp className="w-3 h-3" /> ↑ 4.1% from last month
             </span>
           </div>
-          <div className="p-3 bg-accent/10 rounded-2xl text-accent">
-            <Megaphone className="w-5 h-5" />
-          </div>
-        </GlassContainer>
+        </div>
  
-        <GlassContainer className="bg-white dark:bg-brand-card-dark p-4 flex items-center justify-between border border-brand-border/20 dark:border-brand-border-dark/15 rounded-3xl shadow-sm hover:scale-[1.01] transition-all duration-200">
+        {/* Card 4: AI Queries */}
+        <div className="glass-effect rounded-3xl shadow-sm border border-brand-border/20 dark:border-brand-border-dark/15 p-5 transition-all duration-300 hover:scale-[1.01] bg-white dark:bg-brand-card-dark flex flex-col justify-between gap-4 min-h-[9rem]">
+          <div className="p-2.5 bg-accent/10 rounded-2xl text-accent self-start">
+            <MessageSquare className="w-5 h-5" />
+          </div>
           <div>
-            <p className="text-[10px] uppercase font-bold tracking-wider text-brand-text/75 dark:text-brand-text-dark/75">AI Queries (Today)</p>
-            <h3 className="text-2xl font-black text-brand-text dark:text-brand-text-dark mt-1">{stats.ai_queries_today}</h3>
+            <p className="text-[10px] uppercase font-bold tracking-wider text-brand-text/50 dark:text-brand-text-dark/50">AI Queries (Today)</p>
+            <h3 className="text-2xl sm:text-3xl font-black text-brand-text dark:text-brand-text-dark mt-1">{stats.ai_queries_today}</h3>
             <span className="text-[10px] text-green-500 font-bold flex items-center gap-1 mt-1">
               <TrendingUp className="w-3 h-3" /> ↑ 23.7% from yesterday
             </span>
           </div>
-          <div className="p-3 bg-accent/10 rounded-2xl text-accent">
-            <MessageSquare className="w-5 h-5" />
-          </div>
-        </GlassContainer>
+        </div>
       </div>
 
       {/* Middle row: Weekly Overview (Chart) & Today's Schedule */}

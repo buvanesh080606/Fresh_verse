@@ -7,7 +7,7 @@ import SparkleLogo from '../../../components/ui/SparkleLogo';
 import { 
   BookOpen, Clock, Megaphone, Bell, Calendar, 
   MapPin, Bus, User, ArrowUpRight, Home, Sparkles, Send, MessageSquare, TrendingUp,
-  Coffee, Utensils, Trophy
+  Coffee, Utensils, Trophy, Users
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -122,8 +122,12 @@ const StudentDashboard = () => {
     try {
       await api.post(`events/events/${eventId}/register/`);
       alert("Successfully registered for this event!");
-      // Update event capacity locally
-      setEvents(prev => prev.map(e => e.id === eventId ? { ...e, max_seats: Math.max(0, e.max_seats - 1) } : e));
+      // Update event capacity and registration status locally
+      setEvents(prev => prev.map(e => e.id === eventId ? { 
+        ...e, 
+        available_seats: Math.max(0, e.available_seats - 1),
+        is_registered_by_me: true 
+      } : e));
     } catch (err) {
       const errMsg = err.response?.data?.error || 
                      err.response?.data?.message || 
@@ -409,13 +413,27 @@ const StudentDashboard = () => {
                       <p className="text-[9px] text-brand-text/55 dark:text-brand-text-dark/55 mt-0.5 flex items-center gap-1">
                         <MapPin className="w-3 h-3" /> {event.venue}
                       </p>
+                      <p className="text-[9px] text-brand-text/55 dark:text-brand-text-dark/55 mt-0.5 flex items-center gap-1 font-semibold">
+                        <Users className="w-3 h-3 text-accent" /> {event.available_seats} / {event.max_seats} seats remaining
+                      </p>
                     </div>
-                    <button 
-                      onClick={() => handleRegisterEvent(event.id)}
-                      className="mt-2 text-[10px] font-bold text-white bg-accent hover:bg-accent/95 px-3 py-1 rounded-lg self-start transition-all"
-                    >
-                      Register
-                    </button>
+                    {event.is_registered_by_me ? (
+                      <span className="mt-2 text-[9px] font-extrabold text-secondary bg-secondary/15 px-2.5 py-0.5 rounded border border-secondary/25 self-start">
+                        Registered
+                      </span>
+                    ) : (
+                      <button 
+                        onClick={() => handleRegisterEvent(event.id)}
+                        disabled={event.available_seats === 0}
+                        className={`mt-2 text-[10px] font-bold text-white px-3 py-1 rounded-lg self-start transition-all ${
+                          event.available_seats === 0
+                            ? 'bg-brand-border/20 text-brand-text/40 cursor-not-allowed'
+                            : 'bg-accent hover:bg-accent/95 cursor-pointer'
+                        }`}
+                      >
+                        {event.available_seats === 0 ? 'Full' : 'Register'}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))

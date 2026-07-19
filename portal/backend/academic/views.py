@@ -303,13 +303,26 @@ class TimetableViewSet(viewsets.ModelViewSet):
         if not dept:
             return Response({'error': 'Department parameter is required.'}, status=status.HTTP_400_BAD_REQUEST)
             
+        from django.db.models import Q
         queryset = Timetable.objects.filter(department=dept)
+        
         if sem:
-            queryset = queryset.filter(semester=sem)
+            if str(sem).lower() == 'all':
+                queryset = queryset.filter(Q(semester='All') | Q(semester='all') | Q(semester='') | Q(semester__isnull=True))
+            else:
+                queryset = queryset.filter(semester=sem)
+                
         if sect:
-            queryset = queryset.filter(section=sect)
+            if str(sect).lower() == 'all':
+                queryset = queryset.filter(Q(section='All') | Q(section='all') | Q(section='') | Q(section__isnull=True))
+            else:
+                queryset = queryset.filter(section=sect)
+                
         if batch:
-            queryset = queryset.filter(batch=batch)
+            if str(batch).lower() == 'all':
+                queryset = queryset.filter(Q(batch='All') | Q(batch='all') | Q(batch='') | Q(batch__isnull=True))
+            else:
+                queryset = queryset.filter(batch=batch)
             
         deleted_count, _ = queryset.delete()
         return Response({

@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+/* Force class-based dark mode — disables automatic OS dark mode detection.
+   Tailwind v4 defaults to prefers-color-scheme; this overrides it so dark
+   styles only apply when a .dark class is present on <html>. */
+@variant dark (&:where(.dark, .dark *));
+
+
+:root {
+  --primary-color: #4E220F;
+  --secondary-color: #8B5E3C;
+  --accent-color: #4E220F;
+  
+  --brand-bg: #D99B7F;
+  --brand-card: #FAF2EE;
+  --brand-border: #D1A38B;
+  --brand-text: #4E220F;
+}
+
+.dark {
+  --primary-color: #FAF2EE;
+  --secondary-color: #D4A373;
+  --accent-color: #C08A64;
+  
+  --brand-bg: #2F1E16;
+  --brand-card: #3F2C22;
+  --brand-border: #5C3827;
+  --brand-text: #FAF2EE;
+}
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", "Outfit", system-ui, sans-serif;
+  --color-primary: var(--primary-color);
+  --color-secondary: var(--secondary-color);
+  --color-accent: var(--accent-color);
+  --color-brand-bg: var(--brand-bg);
+  --color-brand-card: var(--brand-card);
+  --color-brand-border: var(--brand-border);
+  --color-brand-text: var(--brand-text);
+  
+  --color-brand-bg-dark: #2F1E16;
+  --color-brand-card-dark: #3F2C22;
+  --color-brand-border-dark: #5C3827;
+  --color-brand-text-dark: #FAF2EE;
+}
+
+@layer base {
+  body {
+    @apply transition-colors duration-300 antialiased;
+  }
+}
+
+/* Custom Glassmorphism Utilities */
+.glass-effect {
+  background: rgba(250, 242, 238, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(139, 94, 60, 0.2);
+}
+
+.dark .glass-effect {
+  background: rgba(63, 44, 34, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(217, 155, 127, 0.15);
+}
+
+.glass-chat {
+  background: rgba(250, 242, 238, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(139, 94, 60, 0.25);
+}
+
+.dark .glass-chat {
+  background: rgba(63, 44, 34, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(217, 155, 127, 0.2);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D1A38B;
+  border-radius: 9999px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #8B5E3C;
+}
+
+/* Custom Input Ring effects */
+.input-focus-ring {
+  @apply focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-all duration-200;
+}
+
+/* Autofill overrides to prevent solid browser background overlay */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: var(--brand-text) !important;
+  transition: background-color 5000000s ease-in-out 0s;
+}

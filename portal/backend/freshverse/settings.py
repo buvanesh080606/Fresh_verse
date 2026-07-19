@@ -80,43 +80,56 @@ TEMPLATES = [
 WSGI_APPLICATION = 'freshverse.wsgi.application'
 
 # Database Setup
-# Try to connect to MySQL. If unreachable, fall back to SQLite for local development convenience.
-DB_NAME = os.getenv('DB_NAME', 'freshverse_db')
-DB_USER = os.getenv('DB_USER', 'freshverse_user')
-DB_PASSWORD = os.getenv('DB_PASSWORD', 'freshverse_password')
-DB_HOST = os.getenv('DB_HOST', '127.0.0.1')
-DB_PORT = os.getenv('DB_PORT', '3306')
+# Priority: DATABASE_URL (Render PostgreSQL) > MySQL > SQLite (local dev fallback)
+DATABASE_URL = os.getenv('DATABASE_URL', '')
 
-use_sqlite = os.getenv('USE_SQLITE', 'False') == 'True'
-# Check if MySQL is running if SQLite is not explicitly forced
-if not use_sqlite:
-    try:
-        s = socket.create_connection((DB_HOST, int(DB_PORT)), timeout=1)
-        s.close()
-    except (socket.timeout, ConnectionRefusedError, OSError):
-        use_sqlite = True
-
-if use_sqlite:
+if DATABASE_URL:
+    # Render PostgreSQL — parse the URL directly
+    import dj_database_url
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
 else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': DB_NAME,
-            'USER': DB_USER,
-            'PASSWORD': DB_PASSWORD,
-            'HOST': DB_HOST,
-            'PORT': DB_PORT,
-            'OPTIONS': {
-                'charset': 'utf8mb4',
+    DB_NAME = os.getenv('DB_NAME', 'freshverse_db')
+    DB_USER = os.getenv('DB_USER', 'freshverse_user')
+    DB_PASSWORD = os.getenv('DB_PASSWORD', 'freshverse_password')
+    DB_HOST = os.getenv('DB_HOST', '127.0.0.1')
+    DB_PORT = os.getenv('DB_PORT', '3306')
+
+    use_sqlite = os.getenv('USE_SQLITE', 'False') == 'True'
+    # Check if MySQL is running; fall back to SQLite if not reachable
+    if not use_sqlite:
+        try:
+            s = socket.create_connection((DB_HOST, int(DB_PORT)), timeout=1)
+            s.close()
+        except (socket.timeout, ConnectionRefusedError, OSError):
+            use_sqlite = True
+
+    if use_sqlite:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
             }
         }
-    }
+    else:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.mysql',
+                'NAME': DB_NAME,
+                'USER': DB_USER,
+                'PASSWORD': DB_PASSWORD,
+                'HOST': DB_HOST,
+                'PORT': DB_PORT,
+                'OPTIONS': {
+                    'charset': 'utf8mb4',
+                }
+            }
+        }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

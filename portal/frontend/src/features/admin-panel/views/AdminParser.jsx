@@ -4,7 +4,7 @@ import GlassContainer from '../../../components/ui/GlassContainer';
 import { 
   Upload, FileSpreadsheet, Plus, Trash2, 
   Save, AlertCircle, CheckCircle2, RefreshCcw,
-  HelpCircle
+  HelpCircle, CalendarRange
 } from 'lucide-react';
 
 // Image compression helper to avoid HTTP 413 Payload Too Large on high-res mobile photos

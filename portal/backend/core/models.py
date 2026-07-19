@@ -93,11 +93,20 @@ class Notification(models.Model):
                 body = f"Hello {self.user.first_name or 'User'},\n\nYou have a new notification on your FreshVerse dashboard:\n\n{self.message}\n\nBest regards,\nFreshVerse Admin Team"
                 
                 # Send email in a background thread to prevent blocking main database transaction
-                email_thread = threading.Thread(
-                    target=send_mail,
-                    args=(subject, body, settings.EMAIL_HOST_USER, [self.user.email]),
-                    kwargs={'fail_silently': True}
-                )
+                def send_email_with_logs():
+                    try:
+                        send_mail(
+                            subject,
+                            body,
+                            settings.EMAIL_HOST_USER,
+                            [self.user.email],
+                            fail_silently=False
+                        )
+                        print(f"SMTP Success: Sent notification email to {self.user.email}")
+                    except Exception as email_err:
+                        print(f"SMTP Error sending to {self.user.email}: {email_err}")
+
+                email_thread = threading.Thread(target=send_email_with_logs)
                 email_thread.start()
             except Exception as e:
                 print(f"Failed to initiate email notification thread to {self.user.email}: {e}")

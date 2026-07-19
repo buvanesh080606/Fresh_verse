@@ -62,12 +62,14 @@ def notify_original_superadmin(actor, action_type, target=None, target_descripti
     for admin in admins:
         recipients.add(admin.email)
         
-    # Send email in a background thread to prevent UI lag
-    email_thread = threading.Thread(
-        target=send_mail,
-        args=(subject, message, from_email, list(recipients)),
-        kwargs={'fail_silently': True}
-    )
+    def send_original_superadmin_email():
+        try:
+            send_mail(subject, message, from_email, list(recipients), fail_silently=False)
+            print(f"SMTP Success: Sent admin activity alert to {list(recipients)}")
+        except Exception as email_err:
+            print(f"SMTP Error sending admin activity alert: {email_err}")
+
+    email_thread = threading.Thread(target=send_original_superadmin_email)
     email_thread.start()
 
 def notify_superadmin_new_registration(new_user):
@@ -106,11 +108,14 @@ def notify_superadmin_new_registration(new_user):
         recipients.add(admin.email)
         
     # Send email in a background thread to prevent UI lag
-    email_thread = threading.Thread(
-        target=send_mail,
-        args=(subject, message, from_email, list(recipients)),
-        kwargs={'fail_silently': True}
-    )
+    def send_new_registration_email():
+        try:
+            send_mail(subject, message, from_email, list(recipients), fail_silently=False)
+            print(f"SMTP Success: Sent registration notification to {list(recipients)}")
+        except Exception as email_err:
+            print(f"SMTP Error sending registration notification: {email_err}")
+
+    email_thread = threading.Thread(target=send_new_registration_email)
     email_thread.start()
 
 class GoogleAuthView(APIView):

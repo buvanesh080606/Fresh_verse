@@ -23,6 +23,8 @@ const AdminEvents = () => {
   const [targetDepartment, setTargetDepartment] = useState('All');
   const [targetSection, setTargetSection] = useState('All');
   const [message, setMessage] = useState({ text: '', type: '' });
+  const [deletingEventId, setDeletingEventId] = useState(null);
+  const [deletingEventTitle, setDeletingEventTitle] = useState('');
   const [showBannerMaker, setShowBannerMaker] = useState(false);
   const [bannerGradient, setBannerGradient] = useState('brown');
   const [bannerSlogan, setBannerSlogan] = useState('All Students Welcome');
@@ -171,12 +173,23 @@ const AdminEvents = () => {
     }
   };
 
-  const handleDeleteEvent = async (eventId, eventTitle) => {
-    if (!window.confirm(`Are you sure you want to permanently delete the event "${eventTitle}"?\n\nAll student registrations for this event will also be removed.`)) return;
+  const handleDeleteEvent = (eventId, eventTitle) => {
+    setDeletingEventId(eventId);
+    setDeletingEventTitle(eventTitle);
+  };
+
+  const confirmDeleteEvent = async () => {
+    if (!deletingEventId) return;
+    const targetId = deletingEventId;
+    const targetTitle = deletingEventTitle;
+    
+    setDeletingEventId(null);
+    setDeletingEventTitle('');
+    
     try {
-      await api.delete(`events/events/${eventId}/`);
-      setEvents(prev => prev.filter(e => e.id !== eventId));
-      setMessage({ text: `Event "${eventTitle}" has been deleted.`, type: 'success' });
+      await api.delete(`events/events/${targetId}/`);
+      setEvents(prev => prev.filter(e => e.id !== targetId));
+      setMessage({ text: `Event "${targetTitle}" has been deleted.`, type: 'success' });
     } catch (err) {
       console.error(err);
       setMessage({ text: 'Failed to delete event. Please try again.', type: 'error' });
@@ -568,6 +581,38 @@ const AdminEvents = () => {
                 </table>
               </div>
             )}
+          </GlassContainer>
+        </div>
+      )}
+
+      {deletingEventId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm animate-fade-in">
+          <GlassContainer className="w-full max-w-md p-6 bg-white dark:bg-brand-card-dark shadow-2xl space-y-4">
+            <h3 className="text-base font-bold text-brand-text dark:text-brand-text-dark border-b border-brand-border/20 pb-2">
+              Confirm Delete Event
+            </h3>
+            <p className="text-xs text-brand-text/75 dark:text-brand-text-dark/75 leading-relaxed">
+              Are you sure you want to permanently delete the event <span className="font-extrabold text-rose-500">"{deletingEventTitle}"</span>?
+              <br /><br />
+              All student registrations for this event will also be removed. This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => {
+                  setDeletingEventId(null);
+                  setDeletingEventTitle('');
+                }}
+                className="px-4 py-2 rounded-xl border border-brand-border dark:border-brand-border-dark/45 text-xs font-bold text-brand-text dark:text-brand-text-dark hover:bg-brand-border/20 cursor-pointer transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteEvent}
+                className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-xs font-bold text-white cursor-pointer transition shadow-md shadow-rose-500/20"
+              >
+                Delete Event
+              </button>
+            </div>
           </GlassContainer>
         </div>
       )}

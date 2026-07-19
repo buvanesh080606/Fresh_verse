@@ -57,18 +57,16 @@ def notify_original_superadmin(actor, action_type, target=None, target_descripti
             f"FreshVerse AI Security System"
         )
         
+    from_email = getattr(settings, 'EMAIL_HOST_USER', '') or 'noreply@freshverse.edu'
     # Send email in a background thread to prevent UI lag
     email_thread = threading.Thread(
         target=send_mail,
-        args=(subject, message, 'noreply@freshverse.edu', ['vsbuvaneshraj06@gmail.com']),
+        args=(subject, message, from_email, ['vsbuvaneshraj06@gmail.com']),
         kwargs={'fail_silently': True}
     )
     email_thread.start()
 
 def notify_superadmin_new_registration(new_user):
-    if new_user.email == 'vsbuvaneshraj06@gmail.com':
-        return
-
     # Find the superadmin user
     superadmin = User.objects.filter(email='vsbuvaneshraj06@gmail.com').first()
     
@@ -97,10 +95,11 @@ def notify_superadmin_new_registration(new_user):
         f"FreshVerse AI Security System"
     )
     
+    from_email = getattr(settings, 'EMAIL_HOST_USER', '') or 'noreply@freshverse.edu'
     # Send email in a background thread to prevent UI lag
     email_thread = threading.Thread(
         target=send_mail,
-        args=(subject, message, 'noreply@freshverse.edu', ['vsbuvaneshraj06@gmail.com']),
+        args=(subject, message, from_email, ['vsbuvaneshraj06@gmail.com']),
         kwargs={'fail_silently': True}
     )
     email_thread.start()

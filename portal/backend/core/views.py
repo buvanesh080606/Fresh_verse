@@ -72,10 +72,20 @@ class ClubViewSet(BaseCampusViewSet):
 
 class NotificationViewSet(viewsets.ModelViewSet):
     serializer_class = NotificationSerializer
-    permission_classes = [permissions.IsAuthenticated]
+
+    def get_permissions(self):
+        # Only admins can create or delete notifications
+        if self.action in ['create', 'destroy']:
+            return [IsAdminUserRole()]
+        # Students and admins can read and mark-as-read
+        return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user)
+        user = self.request.user
+        # Admins can see all notifications; students only see their own
+        if user.is_authenticated and user.role == 'admin':
+            return Notification.objects.all()
+        return Notification.objects.filter(user=user)
 
     def perform_create(self, serializer):
         # Allow admins to send notifications manually

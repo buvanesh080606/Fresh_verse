@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api, { getMediaUrl } from '../../../utils/api';
 import GlassContainer from '../../../components/ui/GlassContainer';
-import { Trophy, Plus, Users, Calendar, MapPin, Download, X, Trash2 } from 'lucide-react';
+import { Trophy, Plus, Users, Calendar, MapPin, Download, X, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const AdminEvents = () => {
   const [events, setEvents] = useState([]);
@@ -9,6 +9,7 @@ const AdminEvents = () => {
   const [attendees, setAttendees] = useState([]);
   const [showAttendeesModal, setShowAttendeesModal] = useState(false);
   const [selectedEventName, setSelectedEventName] = useState('');
+  const [failedPosters, setFailedPosters] = useState({});
 
   // Form states
   const [title, setTitle] = useState('');
@@ -21,7 +22,7 @@ const AdminEvents = () => {
   const [posterPreview, setPosterPreview] = useState(null);
   const [targetDepartment, setTargetDepartment] = useState('All');
   const [targetSection, setTargetSection] = useState('All');
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState({ text: '', type: '' });
   const [showBannerMaker, setShowBannerMaker] = useState(false);
   const [bannerGradient, setBannerGradient] = useState('brown');
   const [bannerSlogan, setBannerSlogan] = useState('All Students Welcome');
@@ -43,7 +44,7 @@ const AdminEvents = () => {
 
   const handleCreateEvent = async (e) => {
     e.preventDefault();
-    setMessage('');
+    setMessage({ text: '', type: '' });
     
     const formData = new FormData();
     formData.append('title', title);
@@ -64,7 +65,7 @@ const AdminEvents = () => {
           'Content-Type': 'multipart/form-data',
         },
       });
-      setMessage('Event published successfully!');
+      setMessage({ text: 'Event published successfully!', type: 'success' });
       fetchEvents();
       // Clear inputs
       setTitle('');
@@ -78,7 +79,7 @@ const AdminEvents = () => {
       setTargetDepartment('All');
       setTargetSection('All');
     } catch (err) {
-      setMessage('Failed to publish event. Please check inputs.');
+      setMessage({ text: 'Failed to publish event. Please check inputs.', type: 'error' });
     }
   };
   const generateBannerImage = () => {
@@ -175,10 +176,10 @@ const AdminEvents = () => {
     try {
       await api.delete(`events/events/${eventId}/`);
       setEvents(prev => prev.filter(e => e.id !== eventId));
-      setMessage(`Event "${eventTitle}" has been deleted.`);
+      setMessage({ text: `Event "${eventTitle}" has been deleted.`, type: 'success' });
     } catch (err) {
       console.error(err);
-      setMessage('Failed to delete event. Please try again.');
+      setMessage({ text: 'Failed to delete event. Please try again.', type: 'error' });
     }
   };
 
@@ -193,6 +194,17 @@ const AdminEvents = () => {
         </p>
       </div>
 
+      {message.text && (
+        <div className={`p-4 rounded-xl border flex items-center gap-2.5 text-xs font-semibold ${
+          message.type === 'success' 
+            ? 'bg-[#4E220F]/10 border-[#4E220F]/25 text-[#4E220F] dark:bg-[#E6CCB2]/10 dark:border-[#E6CCB2]/25 dark:text-[#E6CCB2]' 
+            : 'bg-red-500/10 border-red-500/20 text-red-500'
+        }`}>
+          {message.type === 'success' ? <CheckCircle2 className="w-4.5 h-4.5" /> : <AlertCircle className="w-4.5 h-4.5" />}
+          {message.text}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Left Column: Create Event Form */}
@@ -201,12 +213,6 @@ const AdminEvents = () => {
             <h3 className="text-base font-bold text-brand-text dark:text-brand-text-dark border-b border-brand-border/20 pb-2 flex items-center gap-1.5">
               <Plus className="w-5 h-5 text-accent" /> Publish New Event
             </h3>
-
-            {message && (
-              <div className="p-3 bg-accent/10 border border-accent/25 text-accent text-xs font-semibold rounded-xl">
-                {message}
-              </div>
-            )}
 
             <form onSubmit={handleCreateEvent} className="space-y-3.5">
               <div>
@@ -455,13 +461,18 @@ const AdminEvents = () => {
               {events.map((event) => (
                 <GlassContainer key={event.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-4 px-5">
                   <div className="flex items-center gap-4">
-                    {event.poster_url && (
+                    {event.poster_url && !failedPosters[event.id] ? (
                       <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 border border-brand-border/20 dark:border-brand-border-dark/15">
                         <img 
                           src={getMediaUrl(event.poster_url)} 
                           alt="" 
+                          onError={() => setFailedPosters(prev => ({ ...prev, [event.id]: true }))}
                           className="w-full h-full object-cover"
                         />
+                      </div>
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl bg-gradient-to-tr from-accent/90 to-primary/45 flex items-center justify-center text-white flex-shrink-0 border border-brand-border/20 dark:border-brand-border-dark/15">
+                        <Trophy className="w-6 h-6 opacity-75" />
                       </div>
                     )}
                     <div className="space-y-1">

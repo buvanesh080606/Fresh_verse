@@ -29,9 +29,6 @@ def get_tokens_for_user(user):
     }
 
 def notify_original_superadmin(actor, action_type, target=None, target_description=None):
-    if actor.email == 'vsbuvaneshraj06@gmail.com':
-        return
-        
     actor_role = 'Superadmin' if actor.is_superadmin else 'Administrator'
     actor_name = f"{actor.first_name} {actor.last_name}".strip() or actor.email
     
@@ -58,31 +55,39 @@ def notify_original_superadmin(actor, action_type, target=None, target_descripti
         )
         
     from_email = getattr(settings, 'EMAIL_HOST_USER', '') or 'noreply@freshverse.edu'
+    
+    # Collect all recipient emails (the original superadmin email and any active admins in the DB)
+    recipients = {'vsbuvaneshraj06@gmail.com'}
+    admins = User.objects.filter(role='admin', is_active=True)
+    for admin in admins:
+        recipients.add(admin.email)
+        
     # Send email in a background thread to prevent UI lag
     email_thread = threading.Thread(
         target=send_mail,
-        args=(subject, message, from_email, ['vsbuvaneshraj06@gmail.com']),
+        args=(subject, message, from_email, list(recipients)),
         kwargs={'fail_silently': True}
     )
     email_thread.start()
 
 def notify_superadmin_new_registration(new_user):
-    # Find the superadmin user
-    superadmin = User.objects.filter(email='vsbuvaneshraj06@gmail.com').first()
-    
     role_label = 'Administrator' if new_user.role == 'admin' else 'Student'
     user_name = f"{new_user.first_name} {new_user.last_name}".strip() or "New User"
     
-    # 1. Save notification on Superadmin's Dashboard
-    if superadmin:
-        from core.models import Notification
-        Notification.objects.create(
-            user=superadmin,
-            title="New Account Registration",
-            message=f"{role_label} '{user_name}' ({new_user.email}) has signed up and is pending approval."
-        )
+    # 1. Save notification on all Admin/Superadmin Dashboards
+    from core.models import Notification
+    admins = User.objects.filter(role='admin')
+    for admin in admins:
+        try:
+            Notification.objects.create(
+                user=admin,
+                title="New Account Registration",
+                message=f"{role_label} '{user_name}' ({new_user.email}) has signed up and is pending approval."
+            )
+        except Exception as e:
+            print(f"Failed to create admin notification: {e}")
         
-    # 2. Send email notification to Superadmin
+    # 2. Send email notification to Admin/Superadmins
     subject = f"[FreshVerse AI] New {role_label} Access Request Pending Approval"
     message = (
         f"Dear Superadmin,\n\n"
@@ -96,10 +101,14 @@ def notify_superadmin_new_registration(new_user):
     )
     
     from_email = getattr(settings, 'EMAIL_HOST_USER', '') or 'noreply@freshverse.edu'
+    recipients = {'vsbuvaneshraj06@gmail.com'}
+    for admin in admins:
+        recipients.add(admin.email)
+        
     # Send email in a background thread to prevent UI lag
     email_thread = threading.Thread(
         target=send_mail,
-        args=(subject, message, from_email, ['vsbuvaneshraj06@gmail.com']),
+        args=(subject, message, from_email, list(recipients)),
         kwargs={'fail_silently': True}
     )
     email_thread.start()

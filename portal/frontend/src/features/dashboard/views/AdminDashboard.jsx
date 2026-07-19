@@ -57,94 +57,102 @@ const AdminDashboard = () => {
       {/* Welcome Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-brand-border/20 dark:border-brand-border-dark/20 pb-4">
         <div>
-          <h2 className="text-3xl font-extrabold text-brand-text dark:text-brand-text-dark">
+          <h2 className="text-2xl sm:text-3xl font-black text-brand-text dark:text-brand-text-dark tracking-tight">
             Administrative Control Panel
           </h2>
-          <p className="text-sm text-brand-text/60 dark:text-brand-text-dark/60 mt-1">
-            Logged in as {user?.first_name} {user?.last_name} ({user?.email})
+          <p className="text-xs sm:text-sm text-brand-text/60 dark:text-brand-text-dark/60 mt-1">
+            Logged in as <span className="font-extrabold text-accent">{user?.first_name} {user?.last_name}</span> ({user?.email})
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs bg-[#4E220F]/10 text-[#4E220F] dark:bg-[#E6CCB2]/10 dark:text-[#E6CCB2] border border-[#4E220F]/20 dark:border-[#E6CCB2]/20 px-3 py-1.5 rounded-full font-bold">
-          <ShieldCheck className="w-4 h-4" /> System Online
+        <div className="flex items-center gap-2 text-xs bg-[#4E220F]/10 text-[#4E220F] dark:bg-[#E6CCB2]/10 dark:text-[#E6CCB2] border border-[#4E220F]/20 dark:border-[#E6CCB2]/20 px-3 py-1.5 rounded-full font-bold self-start md:self-auto">
+          <ShieldCheck className="w-4 h-4 text-accent" /> System Online
         </div>
       </div>
 
-      {/* Grid of Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Grid of Stats Cards - Responsive columns: 1 on mobile, 2 on tablet, 4 on desktop */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        <GlassContainer className="p-4 bg-gradient-to-br from-white/70 to-primary/5 dark:from-brand-card-dark/70 dark:to-accent/5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-brand-text/50 dark:text-brand-text-dark/50 uppercase font-extrabold tracking-wider">Students onboarded</p>
-              <h3 className="text-3xl font-black text-brand-text dark:text-brand-text-dark mt-1">
+        {/* Card 1 */}
+        <div className="glass-effect rounded-3xl shadow-sm border border-brand-border/20 dark:border-brand-border-dark/15 p-5 transition-all duration-300 hover:scale-[1.01] bg-gradient-to-br from-white/70 to-primary/5 dark:from-brand-card-dark/70 dark:to-accent/5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] text-brand-text/50 dark:text-brand-text-dark/50 uppercase font-extrabold tracking-wider truncate">Students Onboarded</p>
+              <h3 className="text-2xl sm:text-3xl font-black text-brand-text dark:text-brand-text-dark mt-1 truncate">
                 {loading ? '...' : stats.students}
               </h3>
             </div>
-            <div className="p-3 bg-accent/15 text-accent rounded-xl">
-              <Users className="w-6 h-6" />
+            <div className="p-3 bg-accent/15 text-accent rounded-2xl flex-shrink-0">
+              <Users className="w-5.5 h-5.5" />
             </div>
           </div>
-        </GlassContainer>
+        </div>
 
-        <GlassContainer className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-brand-text/50 dark:text-brand-text-dark/50 uppercase font-extrabold tracking-wider">Faculty index</p>
-              <h3 className="text-3xl font-black text-brand-text dark:text-brand-text-dark mt-1">
+        {/* Card 2 */}
+        <div className="glass-effect rounded-3xl shadow-sm border border-brand-border/20 dark:border-brand-border-dark/15 p-5 transition-all duration-300 hover:scale-[1.01] bg-white dark:bg-brand-card-dark">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] text-brand-text/50 dark:text-brand-text-dark/50 uppercase font-extrabold tracking-wider truncate">Faculty Index</p>
+              <h3 className="text-2xl sm:text-3xl font-black text-brand-text dark:text-brand-text-dark mt-1 truncate">
                 {loading ? '...' : stats.faculty}
               </h3>
             </div>
-            <div className="p-3 bg-accent/15 text-accent rounded-xl">
-              <Database className="w-6 h-6" />
+            <div className="p-3 bg-accent/15 text-accent rounded-2xl flex-shrink-0">
+              <Database className="w-5.5 h-5.5" />
             </div>
           </div>
-        </GlassContainer>
+        </div>
 
-        <GlassContainer className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-brand-text/50 dark:text-brand-text-dark/50 uppercase font-extrabold tracking-wider">Active Events</p>
-              <h3 className="text-3xl font-black text-brand-text dark:text-brand-text-dark mt-1">
+        {/* Card 3 */}
+        <div className="glass-effect rounded-3xl shadow-sm border border-brand-border/20 dark:border-brand-border-dark/15 p-5 transition-all duration-300 hover:scale-[1.01] bg-white dark:bg-brand-card-dark">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] text-brand-text/50 dark:text-brand-text-dark/50 uppercase font-extrabold tracking-wider truncate">Active Events</p>
+              <h3 className="text-2xl sm:text-3xl font-black text-brand-text dark:text-brand-text-dark mt-1 truncate">
                 {loading ? '...' : stats.events}
               </h3>
             </div>
-            <div className="p-3 bg-accent/15 text-accent rounded-xl">
-              <Trophy className="w-6 h-6" />
+            <div className="p-3 bg-accent/15 text-accent rounded-2xl flex-shrink-0">
+              <Trophy className="w-5.5 h-5.5" />
             </div>
           </div>
-        </GlassContainer>
+        </div>
 
-        <GlassContainer className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-brand-text/50 dark:text-brand-text-dark/50 uppercase font-extrabold tracking-wider">announcements</p>
-              <h3 className="text-3xl font-black text-brand-text dark:text-brand-text-dark mt-1">
+        {/* Card 4 */}
+        <div className="glass-effect rounded-3xl shadow-sm border border-brand-border/20 dark:border-brand-border-dark/15 p-5 transition-all duration-300 hover:scale-[1.01] bg-white dark:bg-brand-card-dark">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] text-brand-text/50 dark:text-brand-text-dark/50 uppercase font-extrabold tracking-wider truncate">Announcements</p>
+              <h3 className="text-2xl sm:text-3xl font-black text-brand-text dark:text-brand-text-dark mt-1 truncate">
                 {loading ? '...' : stats.announcements}
               </h3>
             </div>
-            <div className="p-3 bg-accent/15 text-accent rounded-xl">
-              <Megaphone className="w-6 h-6" />
+            <div className="p-3 bg-accent/15 text-accent rounded-2xl flex-shrink-0">
+              <Megaphone className="w-5.5 h-5.5" />
             </div>
           </div>
-        </GlassContainer>
+        </div>
 
       </div>
 
       {/* Admin Quick Action Blocks */}
-      <div>
-        <h3 className="text-lg font-bold text-brand-text dark:text-brand-text-dark mb-4">
+      <div className="space-y-4">
+        <h3 className="text-lg font-black text-brand-text dark:text-brand-text-dark tracking-tight">
           Key Operations Shortcuts
         </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Responsive grid for actions: 1 on mobile, 2 on tablet, 3 on desktop */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {adminActions.map((action, idx) => (
-            <GlassContainer key={idx} className="flex flex-col justify-between h-48 border hover:scale-[1.01] transition-transform duration-200">
-              <div className="space-y-2">
-                <div className={`inline-flex p-3 rounded-xl border ${action.color}`}>
+            <div 
+              key={idx} 
+              className="glass-effect rounded-3xl shadow-sm border border-brand-border/20 dark:border-brand-border-dark/15 p-5 flex flex-col justify-between min-h-[14rem] hover:scale-[1.01] transition-all duration-300 bg-white dark:bg-brand-card-dark"
+            >
+              <div className="space-y-3 text-left">
+                <div className={`inline-flex p-3 rounded-2xl border ${action.color}`}>
                   <action.icon className="w-5 h-5" />
                 </div>
-                <h4 className="font-bold text-brand-text dark:text-brand-text-dark text-base">
+                <h4 className="font-extrabold text-brand-text dark:text-brand-text-dark text-base tracking-tight">
                   {action.label}
                 </h4>
                 <p className="text-xs text-brand-text/60 dark:text-brand-text-dark/60 leading-relaxed">
@@ -154,11 +162,11 @@ const AdminDashboard = () => {
 
               <Link
                 to={action.path}
-                className="flex items-center gap-1.5 text-xs text-accent font-bold hover:underline mt-4 cursor-pointer"
+                className="flex items-center gap-1.5 text-xs text-accent font-extrabold hover:underline mt-4 cursor-pointer self-start"
               >
-                Launch Panel <ArrowRight className="w-4 h-4" />
+                Launch Panel <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
-            </GlassContainer>
+            </div>
           ))}
         </div>
       </div>

@@ -219,6 +219,39 @@ class TimetableViewSet(viewsets.ModelViewSet):
             if 'end_time' in item:
                 item['end_time'] = clean_time(item['end_time'])
 
+            # Fallback for start_time / end_time if missing or invalid
+            try:
+                p_num = int(str(item.get('period_number', 1)).strip())
+            except ValueError:
+                p_num = 1
+            s_type = item.get('slot_type', 'class')
+            
+            if not item.get('start_time') or not item.get('end_time'):
+                default_times = {
+                    1: ('09:15:00', '10:05:00'),
+                    2: ('10:05:00', '10:55:00'),
+                    3: ('11:05:00', '11:55:00'),
+                    4: ('11:55:00', '12:45:00'),
+                    5: ('13:25:00', '14:15:00'),
+                    6: ('14:15:00', '15:05:00'),
+                    7: ('15:15:00', '16:00:00'),
+                    8: ('16:00:00', '16:45:00'),
+                }
+                if p_num in default_times and s_type not in ('break', 'lunch'):
+                    item['start_time'] = item.get('start_time') or default_times[p_num][0]
+                    item['end_time'] = item.get('end_time') or default_times[p_num][1]
+                else:
+                    if s_type == 'lunch':
+                        item['start_time'] = item.get('start_time') or '12:45:00'
+                        item['end_time'] = item.get('end_time') or '13:25:00'
+                    else:
+                        if p_num <= 2:
+                            item['start_time'] = item.get('start_time') or '10:55:00'
+                            item['end_time'] = item.get('end_time') or '11:05:00'
+                        else:
+                            item['start_time'] = item.get('start_time') or '15:05:00'
+                            item['end_time'] = item.get('end_time') or '15:15:00'
+
             # Faculty lookup by email
             faculty_email = item.pop('faculty_email', None)
             if faculty_email:

@@ -71,65 +71,57 @@ const AdminDashboard = () => {
       </div>
 
       {/* Grid of Stats Cards - Responsive columns: 1 on mobile, 2 on tablet, 4 on desktop */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         
-        {/* Card 1 */}
-        <div className="glass-effect rounded-3xl shadow-sm border border-brand-border/20 dark:border-brand-border-dark/15 p-5 transition-all duration-300 hover:scale-[1.01] bg-gradient-to-br from-white/70 to-primary/5 dark:from-brand-card-dark/70 dark:to-accent/5">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[10px] text-brand-text/50 dark:text-brand-text-dark/50 uppercase font-extrabold tracking-wider truncate">Students Onboarded</p>
-              <h3 className="text-2xl sm:text-3xl font-black text-brand-text dark:text-brand-text-dark mt-1 truncate">
-                {loading ? '...' : stats.students}
-              </h3>
-            </div>
-            <div className="p-3 bg-accent/15 text-accent rounded-2xl flex-shrink-0">
-              <Users className="w-5.5 h-5.5" />
-            </div>
+        {/* Card 1: Students */}
+        <div className="glass-effect rounded-3xl shadow-sm border border-brand-border/20 dark:border-brand-border-dark/15 p-5 transition-all duration-300 hover:scale-[1.01] bg-gradient-to-br from-white/70 to-primary/5 dark:from-brand-card-dark/70 dark:to-accent/5 flex flex-col justify-between gap-4 min-h-[7.5rem]">
+          <div className="p-2.5 bg-accent/15 text-accent rounded-2xl self-start">
+            <Users className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[10px] text-brand-text/50 dark:text-brand-text-dark/50 uppercase font-extrabold tracking-wider">Students Onboarded</p>
+            <h3 className="text-2xl sm:text-3xl font-black text-brand-text dark:text-brand-text-dark mt-1">
+              {loading ? '...' : stats.students}
+            </h3>
           </div>
         </div>
 
-        {/* Card 2 */}
-        <div className="glass-effect rounded-3xl shadow-sm border border-brand-border/20 dark:border-brand-border-dark/15 p-5 transition-all duration-300 hover:scale-[1.01] bg-white dark:bg-brand-card-dark">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[10px] text-brand-text/50 dark:text-brand-text-dark/50 uppercase font-extrabold tracking-wider truncate">Faculty Index</p>
-              <h3 className="text-2xl sm:text-3xl font-black text-brand-text dark:text-brand-text-dark mt-1 truncate">
-                {loading ? '...' : stats.faculty}
-              </h3>
-            </div>
-            <div className="p-3 bg-accent/15 text-accent rounded-2xl flex-shrink-0">
-              <Database className="w-5.5 h-5.5" />
-            </div>
+        {/* Card 2: Faculty */}
+        <div className="glass-effect rounded-3xl shadow-sm border border-brand-border/20 dark:border-brand-border-dark/15 p-5 transition-all duration-300 hover:scale-[1.01] bg-white dark:bg-brand-card-dark flex flex-col justify-between gap-4 min-h-[7.5rem]">
+          <div className="p-2.5 bg-accent/15 text-accent rounded-2xl self-start">
+            <Database className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[10px] text-brand-text/50 dark:text-brand-text-dark/50 uppercase font-extrabold tracking-wider">Faculty Index</p>
+            <h3 className="text-2xl sm:text-3xl font-black text-brand-text dark:text-brand-text-dark mt-1">
+              {loading ? '...' : stats.faculty}
+            </h3>
           </div>
         </div>
 
-        {/* Card 3 */}
-        <div className="glass-effect rounded-3xl shadow-sm border border-brand-border/20 dark:border-brand-border-dark/15 p-5 transition-all duration-300 hover:scale-[1.01] bg-white dark:bg-brand-card-dark">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[10px] text-brand-text/50 dark:text-brand-text-dark/50 uppercase font-extrabold tracking-wider truncate">Active Events</p>
-              <h3 className="text-2xl sm:text-3xl font-black text-brand-text dark:text-brand-text-dark mt-1 truncate">
-                {loading ? '...' : stats.events}
-              </h3>
-            </div>
-            <div className="p-3 bg-accent/15 text-accent rounded-2xl flex-shrink-0">
-              <Trophy className="w-5.5 h-5.5" />
-            </div>
+        {/* Card 3: Events */}
+        <div className="glass-effect rounded-3xl shadow-sm border border-brand-border/20 dark:border-brand-border-dark/15 p-5 transition-all duration-300 hover:scale-[1.01] bg-white dark:bg-brand-card-dark flex flex-col justify-between gap-4 min-h-[7.5rem]">
+          <div className="p-2.5 bg-accent/15 text-accent rounded-2xl self-start">
+            <Trophy className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[10px] text-brand-text/50 dark:text-brand-text-dark/50 uppercase font-extrabold tracking-wider">Active Events</p>
+            <h3 className="text-2xl sm:text-3xl font-black text-brand-text dark:text-brand-text-dark mt-1">
+              {loading ? '...' : stats.events}
+            </h3>
           </div>
         </div>
 
-        {/* Card 4 */}
-        <div className="glass-effect rounded-3xl shadow-sm border border-brand-border/20 dark:border-brand-border-dark/15 p-5 transition-all duration-300 hover:scale-[1.01] bg-white dark:bg-brand-card-dark">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[10px] text-brand-text/50 dark:text-brand-text-dark/50 uppercase font-extrabold tracking-wider truncate">Announcements</p>
-              <h3 className="text-2xl sm:text-3xl font-black text-brand-text dark:text-brand-text-dark mt-1 truncate">
-                {loading ? '...' : stats.announcements}
-              </h3>
-            </div>
-            <div className="p-3 bg-accent/15 text-accent rounded-2xl flex-shrink-0">
-              <Megaphone className="w-5.5 h-5.5" />
-            </div>
+        {/* Card 4: Announcements */}
+        <div className="glass-effect rounded-3xl shadow-sm border border-brand-border/20 dark:border-brand-border-dark/15 p-5 transition-all duration-300 hover:scale-[1.01] bg-white dark:bg-brand-card-dark flex flex-col justify-between gap-4 min-h-[7.5rem]">
+          <div className="p-2.5 bg-accent/15 text-accent rounded-2xl self-start">
+            <Megaphone className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[10px] text-brand-text/50 dark:text-brand-text-dark/50 uppercase font-extrabold tracking-wider">Announcements</p>
+            <h3 className="text-2xl sm:text-3xl font-black text-brand-text dark:text-brand-text-dark mt-1">
+              {loading ? '...' : stats.announcements}
+            </h3>
           </div>
         </div>
 
@@ -141,8 +133,8 @@ const AdminDashboard = () => {
           Key Operations Shortcuts
         </h3>
 
-        {/* Responsive grid for actions: 1 on mobile, 2 on tablet, 3 on desktop */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {/* Responsive grid for actions: 1 on mobile, 2 on tablet/laptop, 3 on desktop */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
           {adminActions.map((action, idx) => (
             <div 
               key={idx} 
@@ -169,8 +161,6 @@ const AdminDashboard = () => {
             </div>
           ))}
         </div>
-      </div>
-      
     </div>
   );
 };

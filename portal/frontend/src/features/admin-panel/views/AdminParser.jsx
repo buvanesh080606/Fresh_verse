@@ -320,13 +320,13 @@ const AdminParser = () => {
     setMessage({ text: '', type: '' });
     try {
       if (documentType === 'timetable') {
-        // Enrich rows with selected department, semester, section, and batch before committing
+        // Enrich ALL rows with selected department, semester, section, and batch before committing
         const enrichedGrid = gridData.map(row => ({
           ...row,
-          department: row.department || selectedDept,
-          semester: row.semester || selectedSemester,
-          section: row.section || selectedSection,
-          batch: row.batch || selectedBatch
+          department: selectedDept,
+          semester: selectedSemester,
+          section: selectedSection,
+          batch: selectedBatch
         }));
 
         const response = await api.post('academic/timetable/bulk-save/', enrichedGrid);

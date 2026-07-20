@@ -40,24 +40,54 @@ class TimetableViewSet(viewsets.ModelViewSet):
         if user.role == 'student':
             if hasattr(user, 'student_profile'):
                 profile = user.student_profile
-                dept = profile.department
-                aiml_aliases = ['AIML', 'CSE(AIML)', 'CSE(AI&ML)', 'CSE (AI & ML)']
+                dept = profile.department or 'CSE(AI&ML)'
                 from django.db.models import Q
-                
+
+                aiml_aliases = ['AIML', 'CSE(AIML)', 'CSE(AI&ML)', 'CSE (AI & ML)', 'AI & ML', 'AI&ML']
+                cse_aliases = ['CSE', 'Computer Science', 'Computer Science & Engineering', 'Computer Science & Engineering (CSE)']
+                ece_aliases = ['ECE', 'Electronics & Communication', 'Electronics & Communication (ECE)']
+                eee_aliases = ['EEE', 'Electrical & Electronics', 'Electrical & Electronics (EEE)']
+                mech_aliases = ['MECH', 'Mechanical', 'Mechanical Engineering', 'Mechanical Engineering (MECH)']
+                civil_aliases = ['CIVIL', 'Civil', 'Civil Engineering', 'Civil Engineering (CIVIL)']
+                it_aliases = ['IT', 'Information Technology', 'Information Technology (IT)']
+
+                dept_filter = [dept]
                 if dept in aiml_aliases:
-                    return queryset.filter(
-                        Q(department__in=aiml_aliases),
-                        (Q(semester='All') | Q(semester=profile.semester) | Q(semester='all')),
-                        (Q(section='All') | Q(section=profile.section) | Q(section='all')),
-                        (Q(batch='All') | Q(batch=profile.batch) | Q(batch='all'))
-                    ).order_by('day_order', 'day_of_week', 'start_time')
-                else:
-                    return queryset.filter(
-                        Q(department=dept),
-                        (Q(semester='All') | Q(semester=profile.semester) | Q(semester='all')),
-                        (Q(section='All') | Q(section=profile.section) | Q(section='all')),
-                        (Q(batch='All') | Q(batch=profile.batch) | Q(batch='all'))
-                    ).order_by('day_order', 'day_of_week', 'start_time')
+                    dept_filter = aiml_aliases
+                elif dept in cse_aliases:
+                    dept_filter = cse_aliases
+                elif dept in ece_aliases:
+                    dept_filter = ece_aliases
+                elif dept in eee_aliases:
+                    dept_filter = eee_aliases
+                elif dept in mech_aliases:
+                    dept_filter = mech_aliases
+                elif dept in civil_aliases:
+                    dept_filter = civil_aliases
+                elif dept in it_aliases:
+                    dept_filter = it_aliases
+
+                # Flexible Semester Matching
+                sem_q = Q(semester='All') | Q(semester='all') | Q(semester='') | Q(semester__isnull=True)
+                if profile.semester:
+                    sem_q = sem_q | Q(semester=str(profile.semester))
+
+                # Flexible Section Matching
+                sec_q = Q(section='All') | Q(section='all') | Q(section='') | Q(section__isnull=True)
+                if profile.section:
+                    sec_q = sec_q | Q(section__iexact=str(profile.section))
+
+                # Flexible Batch Matching
+                batch_q = Q(batch='All') | Q(batch='all') | Q(batch='') | Q(batch__isnull=True)
+                if profile.batch:
+                    batch_q = batch_q | Q(batch__iexact=str(profile.batch))
+
+                return queryset.filter(
+                    Q(department__in=dept_filter) | Q(department__iexact=dept),
+                    sem_q,
+                    sec_q,
+                    batch_q
+                ).order_by('day_order', 'day_of_week', 'period_number', 'start_time')
             else:
                 return queryset.none()
         

@@ -21,13 +21,14 @@ class EventViewSet(viewsets.ModelViewSet):
         user = self.request.user
         queryset = Event.objects.all().order_by('date_time')
         
-        # If user is student, filter events relevant to them
+        # If user is student, filter events relevant to them using department alias matching
         if user.is_authenticated and user.role == 'student':
             if hasattr(user, 'student_profile'):
                 profile = user.student_profile
+                dept_aliases = get_dept_alias_list(profile.department)
                 from django.db.models import Q
                 queryset = queryset.filter(
-                    (Q(target_department='All') | Q(target_department__iexact=profile.department)) &
+                    (Q(target_department='All') | Q(target_department__in=dept_aliases) | Q(target_department__iexact=profile.department)) &
                     (Q(target_section='All') | Q(target_section__iexact=profile.section))
                 )
             else:

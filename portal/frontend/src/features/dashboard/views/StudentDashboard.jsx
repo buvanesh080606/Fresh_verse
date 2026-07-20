@@ -45,6 +45,7 @@ const StudentDashboard = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+  const [failedPosters, setFailedPosters] = useState({});
   const [stats, setStats] = useState({
     total_students: 2451,
     upcoming_events: 18,
@@ -392,10 +393,11 @@ const StudentDashboard = () => {
               events.map(event => (
                 <div key={event.id} className="flex gap-3 bg-brand-bg/40 dark:bg-brand-card-dark/40 p-2.5 rounded-2xl border border-brand-border/10">
                   <div className="w-16 h-16 rounded-xl bg-gradient-to-tr from-accent/20 to-primary/25 border border-brand-border/20 overflow-hidden flex items-center justify-center flex-shrink-0">
-                    {event.poster_url ? (
+                    {event.poster_url && !failedPosters[event.id] ? (
                       <img 
                         src={getMediaUrl(event.poster_url)} 
-                        alt="" 
+                        alt={event.title} 
+                        onError={() => setFailedPosters(prev => ({ ...prev, [event.id]: true }))}
                         className="w-full h-full object-cover"
                       />
                     ) : (

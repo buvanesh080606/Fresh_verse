@@ -63,11 +63,16 @@ api.interceptors.response.use(
 
 export const getMediaUrl = (url) => {
   if (!url) return '';
-  let targetUrl = url;
-  if (url.startsWith('http://127.0.0.1:8000') || url.startsWith('http://localhost:8000')) {
-    targetUrl = url.replace(/http:\/\/(127\.0\.0\.1|localhost):8000/, '');
+  let targetUrl = String(url).trim();
+  if (targetUrl.startsWith('http://127.0.0.1:8000') || targetUrl.startsWith('http://localhost:8000')) {
+    targetUrl = targetUrl.replace(/http:\/\/(127\.0\.0\.1|localhost):8000/, '');
   }
-  if (targetUrl.startsWith('http')) return targetUrl;
+  if (targetUrl.startsWith('http://') || targetUrl.startsWith('https://') || targetUrl.startsWith('blob:') || targetUrl.startsWith('data:')) {
+    return targetUrl;
+  }
+  if (!targetUrl.startsWith('/media/') && !targetUrl.startsWith('media/')) {
+    targetUrl = `/media/${targetUrl.startsWith('/') ? targetUrl.slice(1) : targetUrl}`;
+  }
   const cleanBase = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
   const cleanUrl = targetUrl.startsWith('/') ? targetUrl : `/${targetUrl}`;
   return `${cleanBase}${cleanUrl}`;

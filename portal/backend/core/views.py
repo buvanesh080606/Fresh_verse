@@ -119,7 +119,8 @@ class ClubViewSet(BaseCampusViewSet):
                 subject=f"🚀 Club Application Submitted: {club.name}",
                 body=(
                     f"Hello {student_name},\n\n"
-                    f"Your membership application for '{club.name}' has been successfully submitted!\n\n"
+                    f"You have a new notification on your FreshVerse dashboard:\n\n"
+                    f"You have applied successfully for '{club.name}'.\n\n"
                     f"CLUB DETAILS:\n"
                     f"• Club Name: {club.name}\n"
                     f"• Coordinator: {club.coordinator_name}\n"

@@ -382,19 +382,19 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
             Notification.objects.bulk_create(notifications)
 
         # 2. Dispatch Email Broadcast to Target Students
-        recipient_emails = list(set([s.email for s in students if s.email]))
-        if recipient_emails:
-            from utils.email import send_email
-            email_subject = f"[Campus Announcement] {announcement.title}"
-            email_body = (
-                f"Dear Student,\n\n"
-                f"An official campus circular has been broadcasted for your department ({announcement.target_department}):\n\n"
-                f"TITLE: {announcement.title}\n"
-                f"CATEGORY: {announcement.get_category_display()}\n"
-                f"TARGET DEPARTMENT: {announcement.target_department} (Section: {announcement.target_section})\n\n"
-                f"ANNOUNCEMENT DETAILS:\n"
-                f"{announcement.content}\n\n"
-                f"--------------------------------------------------\n"
-                f"FreshVerse Campus Administration Portal\n"
-            )
-            send_email(email_subject, email_body, recipient_emails)
+        from utils.email import send_email
+        for student in students:
+            if student.email:
+                student_name = f"{student.first_name} {student.last_name}".strip() or student.username
+                email_subject = f"📢 Campus Announcement: {announcement.title}"
+                email_body = (
+                    f"Hello {student_name},\n\n"
+                    f"You have a new notification on your FreshVerse dashboard:\n\n"
+                    f"ANNOUNCEMENT: {announcement.title}\n\n"
+                    f"{announcement.content}\n\n"
+                    f"DETAILS:\n"
+                    f"• Category: {announcement.get_category_display()}\n"
+                    f"• Target Department: {announcement.target_department} (Section: {announcement.target_section})\n\n"
+                    f"Best regards,\nFreshVerse Administration Team"
+                )
+                send_email(email_subject, email_body, [student.email])

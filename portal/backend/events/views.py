@@ -118,20 +118,22 @@ class EventViewSet(viewsets.ModelViewSet):
                     registration.status = 'registered'
                     registration.save()
 
-            # Create Notification
+            # Create Notification for Student
             Notification.objects.create(
                 user=user,
                 title="Event Registration Confirmed",
                 message=f"You have registered successfully for {event.title}. Venue: {event.venue}. Date: {event.date_time.strftime('%Y-%m-%d %I:%M %p')}."
             )
 
-            # Dispatch Confirmation Email
+            # Dispatch Confirmation Email to Student
+            from utils.email import send_email
+            student_name = f"{user.first_name} {user.last_name}".strip() or user.username
+            
             if user.email:
-                from utils.email import send_email
                 send_email(
                     subject=f"🎟️ Event Registration Confirmed: {event.title}",
                     body=(
-                        f"Hello {user.first_name or user.username},\n\n"
+                        f"Hello {student_name},\n\n"
                         f"Your registration for '{event.title}' has been successfully confirmed!\n\n"
                         f"EVENT DETAILS:\n"
                         f"• Event Title: {event.title}\n"
@@ -142,6 +144,42 @@ class EventViewSet(viewsets.ModelViewSet):
                         f"Best regards,\nFreshVerse Events Team"
                     ),
                     to=[user.email]
+                )
+
+            # Dispatch Alert Email & Dashboard Notification to Superadmins & Event Creator
+            from django.db.models import Q
+            admin_users = User.objects.filter(Q(is_superuser=True) | Q(role='admin')).distinct()
+            
+            for admin in admin_users:
+                Notification.objects.create(
+                    user=admin,
+                    title="New Event Registration",
+                    message=f"Student {student_name} ({profile.department}) registered for '{event.title}'."
+                )
+
+            admin_emails = list(admin_users.exclude(email='').values_list('email', flat=True))
+            if event.created_by and event.created_by.email and event.created_by.email not in admin_emails:
+                admin_emails.append(event.created_by.email)
+
+            if admin_emails:
+                send_email(
+                    subject=f"🔔 New Event Registration: {student_name} registered for {event.title}",
+                    body=(
+                        f"Hello Admin,\n\n"
+                        f"Student '{student_name}' has registered for the campus event '{event.title}'.\n\n"
+                        f"STUDENT DETAILS:\n"
+                        f"• Name: {student_name}\n"
+                        f"• Student Email: {user.email or 'N/A'}\n"
+                        f"• Roll No: {profile.roll_no}\n"
+                        f"• Department: {profile.department} (Section: {profile.section})\n\n"
+                        f"EVENT DETAILS:\n"
+                        f"• Event Title: {event.title}\n"
+                        f"• Date & Time: {event.date_time.strftime('%B %d, %Y at %I:%M %p')}\n"
+                        f"• Venue: {event.venue}\n"
+                        f"• Seats Remaining: {max(0, event.max_seats - (current_registrations + 1))} / {event.max_seats}\n\n"
+                        f"Best regards,\nFreshVerse Campus Admin System"
+                    ),
+                    to=admin_emails
                 )
 
         return Response({
@@ -167,20 +205,22 @@ class EventViewSet(viewsets.ModelViewSet):
             registration.status = 'cancelled'
             registration.save()
 
-            # Create Notification
+            student_name = f"{user.first_name} {user.last_name}".strip() or user.username
+
+            # Create Notification for Student
             Notification.objects.create(
                 user=user,
                 title="Event Registration Cancelled",
                 message=f"Your registration for {event.title} has been cancelled."
             )
 
-            # Dispatch Cancellation Email
+            # Dispatch Cancellation Email to Student
+            from utils.email import send_email
             if user.email:
-                from utils.email import send_email
                 send_email(
                     subject=f"❌ Event Registration Cancelled: {event.title}",
                     body=(
-                        f"Hello {user.first_name or user.username},\n\n"
+                        f"Hello {student_name},\n\n"
                         f"This is to confirm that your registration for '{event.title}' has been cancelled.\n\n"
                         f"EVENT DETAILS:\n"
                         f"• Event Title: {event.title}\n"
@@ -190,6 +230,36 @@ class EventViewSet(viewsets.ModelViewSet):
                         f"Best regards,\nFreshVerse Events Team"
                     ),
                     to=[user.email]
+                )
+
+            # Dispatch Cancellation Alert Email & Dashboard Notification to Superadmins & Event Creator
+            from django.db.models import Q
+            admin_users = User.objects.filter(Q(is_superuser=True) | Q(role='admin')).distinct()
+            
+            for admin in admin_users:
+                Notification.objects.create(
+                    user=admin,
+                    title="Registration Cancelled",
+                    message=f"Student {student_name} cancelled registration for '{event.title}'."
+                )
+
+            admin_emails = list(admin_users.exclude(email='').values_list('email', flat=True))
+            if event.created_by and event.created_by.email and event.created_by.email not in admin_emails:
+                admin_emails.append(event.created_by.email)
+
+            if admin_emails:
+                send_email(
+                    subject=f"⚠️ Registration Cancelled: {student_name} cancelled for {event.title}",
+                    body=(
+                        f"Hello Admin,\n\n"
+                        f"Student '{student_name}' ({user.email}) has cancelled their registration for '{event.title}'.\n\n"
+                        f"STUDENT DETAILS:\n"
+                        f"• Name: {student_name}\n"
+                        f"• Email: {user.email or 'N/A'}\n"
+                        f"• Department: {profile.department}\n\n"
+                        f"Best regards,\nFreshVerse Campus Admin System"
+                    ),
+                    to=admin_emails
                 )
 
             return Response({'message': 'Registration cancelled successfully'}, status=status.HTTP_200_OK)

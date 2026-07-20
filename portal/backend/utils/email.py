@@ -40,7 +40,7 @@ def send_email(subject: str, body: str, to: list[str]) -> None:
             if response.status_code in [200, 201, 202]:
                 print(f"Resend Direct Email Success to {recipients} | Response: {response.text}", flush=True)
             else:
-                print(f"Resend Batch Delivery Notice ({response.status_code}): {response.text}. Retrying individually...", flush=True)
+                print(f"Resend Batch Notice ({response.status_code}): {response.text}. Retrying individually...", flush=True)
                 for single_recipient in recipients:
                     single_payload = {
                         "from": "FreshVerse Portal <onboarding@resend.dev>",
@@ -53,6 +53,24 @@ def send_email(subject: str, body: str, to: list[str]) -> None:
                         print(f"Resend Individual Email Success to {single_recipient}", flush=True)
                     else:
                         print(f"Resend API Notice for {single_recipient} ({r.status_code}): {r.text}", flush=True)
+                        # If Resend free sandbox prevents sending to unverified external emails, forward to superadmin email
+                        sandbox_owner = "vsbuvaneshraj06@gmail.com"
+                        if single_recipient != sandbox_owner:
+                            fallback_subject = f"[For Student: {single_recipient}] {subject}"
+                            fallback_body = (
+                                f"--- RESEND SANDBOX FORWARDED EMAIL ---\n"
+                                f"Intended Student Recipient: {single_recipient}\n"
+                                f"----------------------------------------\n\n"
+                                f"{body}"
+                            )
+                            fb_payload = {
+                                "from": "FreshVerse Portal <onboarding@resend.dev>",
+                                "to": [sandbox_owner],
+                                "subject": fallback_subject,
+                                "text": fallback_body,
+                            }
+                            requests.post("https://api.resend.com/emails", json=fb_payload, headers=headers, timeout=10)
+                            print(f"Forwarded email for {single_recipient} to superadmin sandbox ({sandbox_owner})", flush=True)
         except Exception as e:
             print(f"Resend Connection Exception sending for {recipients}: {e}", flush=True)
 

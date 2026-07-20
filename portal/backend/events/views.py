@@ -136,6 +136,34 @@ class EventViewSet(viewsets.ModelViewSet):
         serializer = EventRegistrationSerializer(registrations, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+def get_dept_alias_list(dept_name):
+    if not dept_name:
+        return []
+    dept_str = str(dept_name).strip()
+    aiml_aliases = ['AIML', 'CSE(AIML)', 'CSE(AI&ML)', 'CSE (AI & ML)', 'AI & ML', 'AI&ML']
+    cse_aliases = ['CSE', 'Computer Science', 'Computer Science & Engineering', 'Computer Science & Engineering (CSE)']
+    ece_aliases = ['ECE', 'Electronics & Communication', 'Electronics & Communication (ECE)']
+    eee_aliases = ['EEE', 'Electrical & Electronics', 'Electrical & Electronics (EEE)']
+    mech_aliases = ['MECH', 'Mechanical', 'Mechanical Engineering', 'Mechanical Engineering (MECH)']
+    civil_aliases = ['CIVIL', 'Civil', 'Civil Engineering', 'Civil Engineering (CIVIL)']
+    it_aliases = ['IT', 'Information Technology', 'Information Technology (IT)']
+
+    if dept_str in aiml_aliases:
+        return aiml_aliases
+    if dept_str in cse_aliases:
+        return cse_aliases
+    if dept_str in ece_aliases:
+        return ece_aliases
+    if dept_str in eee_aliases:
+        return eee_aliases
+    if dept_str in mech_aliases:
+        return mech_aliases
+    if dept_str in civil_aliases:
+        return civil_aliases
+    if dept_str in it_aliases:
+        return it_aliases
+    return [dept_str]
+
 class AnnouncementViewSet(viewsets.ModelViewSet):
     serializer_class = AnnouncementSerializer
 
@@ -146,9 +174,10 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
         if user.is_authenticated and user.role == 'student':
             if hasattr(user, 'student_profile'):
                 profile = user.student_profile
+                dept_aliases = get_dept_alias_list(profile.department)
                 from django.db.models import Q
                 queryset = queryset.filter(
-                    (Q(target_department='All') | Q(target_department__iexact=profile.department)) &
+                    (Q(target_department='All') | Q(target_department__in=dept_aliases) | Q(target_department__iexact=profile.department)) &
                     (Q(target_section='All') | Q(target_section__iexact=profile.section))
                 )
             else:
@@ -165,25 +194,52 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         announcement = serializer.save(created_by=self.request.user)
         
-        # Target students to receive notifications
+        # Target students to receive dashboard notifications & emails
         students = User.objects.filter(role='student')
+        from django.db.models import Q
         
-        # Apply department target filter
+        # Apply department target filter with alias matching
         if announcement.target_department != 'All':
-            students = students.filter(student_profile__department__iexact=announcement.target_department)
+            dept_aliases = get_dept_alias_list(announcement.target_department)
+            students = students.filter(
+                Q(student_profile__department__in=dept_aliases) | 
+                Q(student_profile__department__iexact=announcement.target_department)
+            )
             
         # Apply section target filter
         if announcement.target_section != 'All':
-            students = students.filter(student_profile__section__iexact=announcement.target_section)
+            students = students.filter(
+                Q(student_profile__section='All') | 
+                Q(student_profile__section__iexact=announcement.target_section)
+            )
         
+        # 1. Create Dashboard Notifications
         notifications = [
             Notification(
                 user=student,
                 title=f"New Announcement: {announcement.title}",
-                message=f"A new announcement was published in the '{announcement.get_category_display()}' category:\n\n{announcement.content[:100]}..."
+                message=f"A new circular was published for {announcement.target_department}:\n\n{announcement.content}"
             )
             for student in students
         ]
         
-        # Bulk create for performance
-        Notification.objects.bulk_create(notifications)
+        if notifications:
+            Notification.objects.bulk_create(notifications)
+
+        # 2. Dispatch Email Broadcast to Target Students
+        recipient_emails = list(set([s.email for s in students if s.email]))
+        if recipient_emails:
+            from utils.email import send_email
+            email_subject = f"[Campus Announcement] {announcement.title}"
+            email_body = (
+                f"Dear Student,\n\n"
+                f"An official campus circular has been broadcasted for your department ({announcement.target_department}):\n\n"
+                f"TITLE: {announcement.title}\n"
+                f"CATEGORY: {announcement.get_category_display()}\n"
+                f"TARGET DEPARTMENT: {announcement.target_department} (Section: {announcement.target_section})\n\n"
+                f"ANNOUNCEMENT DETAILS:\n"
+                f"{announcement.content}\n\n"
+                f"--------------------------------------------------\n"
+                f"FreshVerse Campus Administration Portal\n"
+            )
+            send_email(email_subject, email_body, recipient_emails)

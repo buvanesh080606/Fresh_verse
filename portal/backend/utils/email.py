@@ -1,19 +1,20 @@
+import os
+import smtplib
 import threading
 import requests
+from email.mime.text import MIMEText
 from django.conf import settings
 
 
 def send_email(subject: str, body: str, to: list[str]) -> None:
     """
-    Send emails directly to intended student/faculty recipients using Resend API.
+    Send emails directly to intended student/faculty recipients.
+    Uses SMTP (e.g. Gmail SMTP) if configured in .env/settings so emails go directly to
+    student email addresses (e.g. ezhilarasisaravanan33@gmail.com).
+    Falls back to Resend API if SMTP is unavailable.
     Runs in a background thread to avoid blocking web requests.
     """
     def _send():
-        api_key = getattr(settings, 'RESEND_API_KEY', '')
-        if not api_key:
-            print(f"[Email - Console Fallback] To: {to}\nSubject: {subject}\n{body}", flush=True)
-            return
-
         if isinstance(to, str):
             raw_recipients = [to.strip()]
         else:
@@ -25,6 +26,37 @@ def send_email(subject: str, body: str, to: list[str]) -> None:
         if not recipients:
             return
 
+        # 1. Try Primary Direct SMTP Transport (e.g., Gmail SMTP from .env)
+        smtp_host = os.getenv('EMAIL_HOST') or getattr(settings, 'EMAIL_HOST', 'smtp.gmail.com')
+        smtp_port = int(os.getenv('EMAIL_PORT') or getattr(settings, 'EMAIL_PORT', 587))
+        smtp_user = os.getenv('EMAIL_HOST_USER') or getattr(settings, 'EMAIL_HOST_USER', '')
+        smtp_password = (os.getenv('EMAIL_HOST_PASSWORD') or getattr(settings, 'EMAIL_HOST_PASSWORD', '')).replace(" ", "")
+
+        if smtp_user and smtp_password:
+            try:
+                server = smtplib.SMTP(smtp_host, smtp_port, timeout=12)
+                server.starttls()
+                server.login(smtp_user, smtp_password)
+
+                for r in recipients:
+                    msg = MIMEText(body, 'plain', 'utf-8')
+                    msg['Subject'] = subject
+                    msg['From'] = f"FreshVerse Portal <{smtp_user}>"
+                    msg['To'] = r
+                    server.sendmail(smtp_user, [r], msg.as_string())
+
+                server.quit()
+                print(f"[SMTP Direct Email Success] Sent email directly to {recipients}", flush=True)
+                return
+            except Exception as e:
+                print(f"[SMTP Error] Failed to send via SMTP: {e}. Falling back to Resend API...", flush=True)
+
+        # 2. Fallback: Resend API
+        api_key = getattr(settings, 'RESEND_API_KEY', '') or os.getenv('RESEND_API_KEY', '')
+        if not api_key:
+            print(f"[Email - Console Fallback] To: {recipients}\nSubject: {subject}\n{body}", flush=True)
+            return
+
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
@@ -33,7 +65,7 @@ def send_email(subject: str, body: str, to: list[str]) -> None:
 
         sandbox_owner = "vsbuvaneshraj06@gmail.com"
 
-        # Try sending directly to recipients
+        # Try sending directly to recipients via Resend
         try:
             payload = {
                 "from": "FreshVerse Portal <onboarding@resend.dev>",
@@ -50,8 +82,7 @@ def send_email(subject: str, body: str, to: list[str]) -> None:
         except Exception as e:
             print(f"Resend Connection Exception: {e}", flush=True)
 
-        # If batch call failed (e.g., due to Resend free plan sandbox restrictions on unverified emails),
-        # attempt individual delivery for verified addresses, and group unverified ones into 1 single fallback email.
+        # If batch call failed (e.g. sandbox restriction), try individual or consolidated fallback
         unverified_recipients = []
         for single_recipient in recipients:
             try:
@@ -72,7 +103,6 @@ def send_email(subject: str, body: str, to: list[str]) -> None:
                 if single_recipient != sandbox_owner:
                     unverified_recipients.append(single_recipient)
 
-        # Send EXACTLY ONE consolidated fallback email to sandbox owner if external recipients failed
         if unverified_recipients:
             try:
                 recipients_str = ", ".join(unverified_recipients)

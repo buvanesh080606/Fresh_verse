@@ -73,10 +73,7 @@ const AdminParser = () => {
     const saved = sessionStorage.getItem('ocr_document_type');
     return saved || 'timetable';
   });
-  const [message, setMessage] = useState(() => {
-    const saved = sessionStorage.getItem('ocr_message');
-    return saved ? JSON.parse(saved) : { text: '', type: '' };
-  });
+  const [message, setMessage] = useState({ text: '', type: '' });
 
   // Target assignment inputs
   const [selectedDept, setSelectedDept] = useState(() => {
@@ -108,9 +105,7 @@ const AdminParser = () => {
     sessionStorage.setItem('ocr_document_type', documentType);
   }, [documentType]);
 
-  useEffect(() => {
-    sessionStorage.setItem('ocr_message', JSON.stringify(message));
-  }, [message]);
+
 
   useEffect(() => {
     sessionStorage.setItem('ocr_selected_dept', selectedDept);

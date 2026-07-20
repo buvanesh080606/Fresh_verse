@@ -66,9 +66,128 @@ class AcademicCalendarViewSet(BaseCampusViewSet):
             status=status.HTTP_200_OK
         )
 
+from core.models import Hostel, BusRoute, CampusInfo, AcademicCalendar, Club, Notification, ClubApplication
+from core.serializers import (
+    HostelSerializer, BusRouteSerializer, CampusInfoSerializer, 
+    AcademicCalendarSerializer, ClubSerializer, NotificationSerializer, ClubApplicationSerializer
+)
+
 class ClubViewSet(BaseCampusViewSet):
     queryset = Club.objects.all()
     serializer_class = ClubSerializer
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', 'apply', 'my_applications']:
+            permission_classes = [permissions.IsAuthenticated]
+        else:
+            permission_classes = [IsAdminUserRole]
+        return [permission() for permission in permission_classes]
+
+    @action(detail=True, methods=['post'])
+    def apply(self, request, pk=None):
+        club = self.get_object()
+        user = request.user
+
+        if user.role != 'student' or not hasattr(user, 'student_profile'):
+            return Response({'error': 'Only onboarded students can apply to join campus clubs.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        profile = user.student_profile
+
+        application, created = ClubApplication.objects.get_or_create(
+            club=club,
+            student=profile,
+            defaults={'status': 'applied'}
+        )
+
+        if not created:
+            return Response({'error': f'You have already applied to join {club.name}.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        student_name = f"{user.first_name} {user.last_name}".strip() or user.username
+        total_registered = club.applications.count()
+
+        # Create Notification for Student
+        Notification.objects.create(
+            user=user,
+            title="Club Application Submitted",
+            message=f"Your membership application for '{club.name}' has been received successfully."
+        )
+
+        # Dispatch Email to Student
+        from utils.email import send_email
+        if user.email:
+            send_email(
+                subject=f"🚀 Club Application Submitted: {club.name}",
+                body=(
+                    f"Hello {student_name},\n\n"
+                    f"Your membership application for '{club.name}' has been successfully submitted!\n\n"
+                    f"CLUB DETAILS:\n"
+                    f"• Club Name: {club.name}\n"
+                    f"• Coordinator: {club.coordinator_name}\n"
+                    f"• Contact Email: {club.contact_email}\n\n"
+                    f"The club coordinator will review your application soon.\n\n"
+                    f"Best regards,\nFreshVerse Clubs & Societies Team"
+                ),
+                to=[user.email]
+            )
+
+        # Dispatch Alert Email to Superadmins & Club Coordinator Email
+        from django.contrib.auth import get_user_model
+        from django.db.models import Q
+        User = get_user_model()
+        admin_users = User.objects.filter(Q(is_superuser=True) | Q(role='admin')).distinct()
+
+        for admin in admin_users:
+            Notification.objects.create(
+                user=admin,
+                title="New Club Registration",
+                message=f"Student {student_name} ({profile.department}) applied to join '{club.name}'."
+            )
+
+        admin_emails = list(admin_users.exclude(email='').values_list('email', flat=True))
+        if club.contact_email and club.contact_email not in admin_emails:
+            admin_emails.append(club.contact_email)
+
+        admin_emails = list(dict.fromkeys([e.strip() for e in admin_emails if e and isinstance(e, str) and e.strip()]))
+
+        if admin_emails:
+            send_email(
+                subject=f"📌 New Club Application: {student_name} applied for {club.name}",
+                body=(
+                    f"Hello Admin / Coordinator,\n\n"
+                    f"Student '{student_name}' has applied to join '{club.name}'.\n\n"
+                    f"APPLICANT DETAILS:\n"
+                    f"• Name: {student_name}\n"
+                    f"• Student Email: {user.email or 'N/A'}\n"
+                    f"• Roll No: {profile.roll_no}\n"
+                    f"• Department: {profile.department} (Section: {profile.section})\n"
+                    f"• Phone: {profile.phone or 'N/A'}\n\n"
+                    f"CLUB REGISTRATION STATS:\n"
+                    f"• Club: {club.name}\n"
+                    f"• Total Registered Members/Applicants: {total_registered}\n\n"
+                    f"Best regards,\nFreshVerse Campus Administration System"
+                ),
+                to=admin_emails
+            )
+
+        return Response({
+            'message': f'Successfully applied to {club.name}',
+            'application': ClubApplicationSerializer(application).data
+        }, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['get'], permission_classes=[IsAdminUserRole])
+    def applications(self, request, pk=None):
+        club = self.get_object()
+        apps = club.applications.all()
+        serializer = ClubApplicationSerializer(apps, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def my_applications(self, request):
+        user = request.user
+        if user.role == 'student' and hasattr(user, 'student_profile'):
+            applied_ids = list(ClubApplication.objects.filter(student=user.student_profile).values_list('club_id', flat=True))
+            return Response(applied_ids, status=status.HTTP_200_OK)
+        return Response([], status=status.HTTP_200_OK)
 
 class NotificationViewSet(viewsets.ModelViewSet):
     serializer_class = NotificationSerializer

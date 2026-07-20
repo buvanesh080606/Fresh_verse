@@ -79,3 +79,22 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"Notification for {self.user.email}: {self.title}"
+
+class ClubApplication(models.Model):
+    STATUS_CHOICES = (
+        ('applied', 'Applied'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
+    )
+    club = models.ForeignKey(Club, on_delete=models.CASCADE, related_name='applications')
+    student = models.ForeignKey('academic.StudentProfile', on_delete=models.CASCADE, related_name='club_applications')
+    applied_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='applied')
+
+    class Meta:
+        unique_together = ('club', 'student')
+        ordering = ['-applied_at']
+
+    def __str__(self):
+        return f"{self.student.roll_no} - {self.club.name} ({self.status})"
+

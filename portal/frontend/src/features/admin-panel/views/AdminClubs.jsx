@@ -3,7 +3,7 @@ import api from '../../../utils/api';
 import GlassContainer from '../../../components/ui/GlassContainer';
 import { 
   Sparkles, Search, Plus, Edit2, Trash2, X, 
-  Save, AlertCircle, Mail, User, Award, Link
+  Save, AlertCircle, Mail, User, Award, Link, Users
 } from 'lucide-react';
 
 const AdminClubs = () => {
@@ -24,6 +24,12 @@ const AdminClubs = () => {
   const [showLogoGenerator, setShowLogoGenerator] = useState(false);
   const [logoInitials, setLogoInitials] = useState('');
   const [logoGradient, setLogoGradient] = useState('brown');
+
+  // Applications modal state
+  const [showAppsModal, setShowAppsModal] = useState(false);
+  const [selectedClub, setSelectedClub] = useState(null);
+  const [applications, setApplications] = useState([]);
+  const [loadingApps, setLoadingApps] = useState(false);
 
   const fetchClubs = async () => {
     try {
@@ -60,6 +66,20 @@ const AdminClubs = () => {
     setContactEmail(club.contact_email);
     setErrorMsg('');
     setShowModal(true);
+  };
+
+  const openApplicationsModal = async (club) => {
+    setSelectedClub(club);
+    setShowAppsModal(true);
+    setLoadingApps(true);
+    try {
+      const res = await api.get(`core/clubs/${club.id}/applications/`);
+      setApplications(res.data);
+    } catch (err) {
+      console.error("Failed to fetch club applications:", err);
+    } finally {
+      setLoadingApps(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -251,7 +271,7 @@ const AdminClubs = () => {
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-3">
                     <div 
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center text-white overflow-hidden font-black text-sm uppercase select-none relative"
+                      className="w-12 h-12 rounded-2xl flex items-center justify-center text-white overflow-hidden font-black text-sm uppercase select-none relative flex-shrink-0"
                       style={{
                         background: club.logo_url ? 'transparent' : 'linear-gradient(135deg, #4E220F, #8C5233)'
                       }}
@@ -317,6 +337,14 @@ const AdminClubs = () => {
                       {club.contact_email}
                     </a>
                   </div>
+
+                  <button
+                    onClick={() => openApplicationsModal(club)}
+                    className="w-full mt-3 py-2 px-3 rounded-xl bg-accent/10 hover:bg-accent/20 text-accent font-extrabold text-xs flex items-center justify-center gap-2 transition cursor-pointer border border-accent/20"
+                  >
+                    <Users className="w-4 h-4" />
+                    View Applicants ({club.applications_count || 0})
+                  </button>
                 </div>
               </div>
             </GlassContainer>
@@ -512,6 +540,79 @@ const AdminClubs = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Applications Modal */}
+      {showAppsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border border-brand-border/20 dark:border-brand-border-dark/30 bg-white dark:bg-brand-card-dark p-6 space-y-4 text-left animate-slide-up scrollbar-thin">
+            <div className="flex items-center justify-between border-b border-brand-border/10 dark:border-brand-border-dark/10 pb-3">
+              <div>
+                <h3 className="font-black text-brand-text dark:text-brand-text-dark text-base flex items-center gap-2">
+                  <Users className="w-5 h-5 text-accent" />
+                  {selectedClub?.name} - Registered Applicants ({applications.length})
+                </h3>
+                <p className="text-xs text-brand-text/60 dark:text-brand-text-dark/60">
+                  Registered students and applicant details for this organization.
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowAppsModal(false)}
+                className="p-1.5 rounded-xl hover:bg-brand-bg dark:hover:bg-brand-border-dark/20 text-brand-text/60 dark:text-brand-text-dark/60 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {loadingApps ? (
+              <div className="py-12 text-center text-xs text-brand-text/50">Loading applicant details...</div>
+            ) : applications.length === 0 ? (
+              <div className="py-12 text-center text-xs text-brand-text/50 border border-dashed border-brand-border/30 rounded-2xl">
+                No student applications registered for this club yet.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-brand-border/20 dark:border-brand-border-dark/20 text-[10px] font-black uppercase text-brand-text/60 dark:text-brand-text-dark/60">
+                      <th className="py-2.5 px-3">Student Name</th>
+                      <th className="py-2.5 px-3">Roll No</th>
+                      <th className="py-2.5 px-3">Dept &amp; Sec</th>
+                      <th className="py-2.5 px-3">Contact</th>
+                      <th className="py-2.5 px-3">Applied Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-brand-border/10 dark:divide-brand-border-dark/10">
+                    {applications.map((app) => {
+                      const st = app.student_detail || {};
+                      const name = `${st.user?.first_name || ''} ${st.user?.last_name || ''}`.trim() || st.user?.username || 'Student';
+                      return (
+                        <tr key={app.id} className="hover:bg-brand-bg/30 dark:hover:bg-brand-border-dark/10">
+                          <td className="py-3 px-3 font-bold text-brand-text dark:text-brand-text-dark">
+                            {name}
+                          </td>
+                          <td className="py-3 px-3 font-mono text-brand-text/80 dark:text-brand-text-dark/80">
+                            {st.roll_no || 'N/A'}
+                          </td>
+                          <td className="py-3 px-3 font-semibold text-brand-text/80 dark:text-brand-text-dark/80">
+                            {st.department || 'All'} (Sec: {st.section || 'All'})
+                          </td>
+                          <td className="py-3 px-3 space-y-0.5 text-[11px]">
+                            <div className="text-accent">{st.user?.email || 'N/A'}</div>
+                            <div className="text-brand-text/60">{st.phone || 'N/A'}</div>
+                          </td>
+                          <td className="py-3 px-3 text-brand-text/60 text-[11px]">
+                            {new Date(app.applied_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}

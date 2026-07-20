@@ -10,28 +10,43 @@ const ClubsHub = () => {
   const [joinedClubs, setJoinedClubs] = useState([]);
   const [applyingId, setApplyingId] = useState(null);
 
-  useEffect(() => {
-    const fetchClubs = async () => {
+  const fetchClubs = async () => {
+    try {
+      const response = await api.get('core/clubs/');
+      setClubs(response.data);
+
       try {
-        const response = await api.get('core/clubs/');
-        setClubs(response.data);
-      } catch (err) {
-        console.error("Failed to load clubs:", err);
-        setError("Unable to retrieve clubs directory.");
-      } finally {
-        setLoading(false);
+        const appsRes = await api.get('core/clubs/my_applications/');
+        setJoinedClubs(appsRes.data || []);
+      } catch (e) {
+        console.error("Failed to load my club applications:", e);
       }
-    };
+    } catch (err) {
+      console.error("Failed to load clubs:", err);
+      setError("Unable to retrieve clubs directory.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchClubs();
   }, []);
 
-  const handleApply = (clubId, clubName) => {
+  const handleApply = async (clubId, clubName) => {
     setApplyingId(clubId);
-    setTimeout(() => {
+    try {
+      await api.post(`core/clubs/${clubId}/apply/`);
       setJoinedClubs(prev => [...prev, clubId]);
+      alert(`Application to join ${clubName} was submitted successfully! An email alert has been sent to the club coordinator.`);
+      fetchClubs();
+    } catch (err) {
+      console.error("Club application failed:", err);
+      const msg = err.response?.data?.error || "Failed to submit application. Please try again.";
+      alert(msg);
+    } finally {
       setApplyingId(null);
-      alert(`Application to join the ${clubName} was submitted successfully!`);
-    }, 800);
+    }
   };
 
   return (
@@ -39,7 +54,7 @@ const ClubsHub = () => {
       {/* Title Header */}
       <div>
         <h2 className="text-2xl font-black text-brand-text dark:text-brand-text-dark tracking-tight flex items-center gap-2">
-          <Sparkles className="w-6 h-6 text-accent" /> Clubs & Committees
+          <Sparkles className="w-6 h-6 text-accent" /> Clubs &amp; Committees
         </h2>
         <p className="text-xs text-brand-text/60 dark:text-brand-text-dark/60 mt-0.5">
           Explore student societies, interest groups, and administrative committees inside the campus.
@@ -64,7 +79,7 @@ const ClubsHub = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {clubs.map((club) => {
-            const isApplied = joinedClubs.includes(club.id);
+            const isApplied = joinedClubs.includes(club.id) || club.is_applied_by_me;
             const isApplying = applyingId === club.id;
 
             return (
@@ -76,7 +91,7 @@ const ClubsHub = () => {
                   {/* Card Header Logo / Initial placeholder */}
                   <div className="flex items-center gap-3 pb-3 border-b border-brand-border/10 dark:border-brand-border-dark/10 mb-4">
                     <div 
-                      className="w-11 h-11 rounded-2xl flex items-center justify-center text-white overflow-hidden font-black text-xs uppercase select-none relative"
+                      className="w-11 h-11 rounded-2xl flex items-center justify-center text-white overflow-hidden font-black text-xs uppercase select-none relative flex-shrink-0"
                       style={{
                         background: club.logo_url ? 'transparent' : 'linear-gradient(135deg, #4E220F, #8C5233)'
                       }}
@@ -98,7 +113,13 @@ const ClubsHub = () => {
                     </div>
                     <div>
                       <h4 className="font-black text-sm text-brand-text dark:text-brand-text-dark leading-tight">{club.name}</h4>
-                      <span className="text-[10px] text-brand-text/45 dark:text-brand-text-dark/45 font-bold uppercase tracking-wider mt-0.5 block">Student Club</span>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] text-brand-text/45 dark:text-brand-text-dark/45 font-bold uppercase tracking-wider block">Student Club</span>
+                        <span className="text-[10px] font-bold text-accent bg-accent/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          {club.applications_count || 0} Members
+                        </span>
+                      </div>
                     </div>
                   </div>
 

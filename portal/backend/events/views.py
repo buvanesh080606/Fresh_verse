@@ -45,6 +45,20 @@ class EventViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        data = request.data.copy()
+        
+        # If poster_url is passed as a string or empty, remove it so existing poster is kept
+        if 'poster_url' in data and not hasattr(data['poster_url'], 'read'):
+            data.pop('poster_url', None)
+
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
     def perform_destroy(self, instance):
         # Notify all registered students when an event is cancelled/deleted by admin
         registrations = instance.registrations.filter(status='registered')

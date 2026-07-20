@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api, { getMediaUrl } from '../../../utils/api';
 import GlassContainer from '../../../components/ui/GlassContainer';
-import { Trophy, Plus, Users, Calendar, MapPin, Download, X, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Trophy, Plus, Users, Calendar, MapPin, Download, X, Trash2, CheckCircle2, AlertCircle, Edit2 } from 'lucide-react';
 
 const AdminEvents = () => {
   const [events, setEvents] = useState([]);
@@ -12,6 +12,7 @@ const AdminEvents = () => {
   const [failedPosters, setFailedPosters] = useState({});
 
   // Form states
+  const [editingEventId, setEditingEventId] = useState(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [venue, setVenue] = useState('');
@@ -44,6 +45,49 @@ const AdminEvents = () => {
     fetchEvents();
   }, []);
 
+  const openEditEvent = (event) => {
+    setEditingEventId(event.id);
+    setTitle(event.title || '');
+    setDescription(event.description || '');
+    setVenue(event.venue || '');
+    if (event.date_time) {
+      const dt = new Date(event.date_time);
+      const tzOffset = dt.getTimezoneOffset() * 60000;
+      const localISOTime = (new Date(dt.getTime() - tzOffset)).toISOString().slice(0, 16);
+      setDateTime(localISOTime);
+    }
+    if (event.registration_deadline) {
+      const dl = new Date(event.registration_deadline);
+      const tzOffset = dl.getTimezoneOffset() * 60000;
+      const localISOTime = (new Date(dl.getTime() - tzOffset)).toISOString().slice(0, 16);
+      setDeadline(localISOTime);
+    }
+    setMaxSeats(event.max_seats || 100);
+    setTargetDepartment(event.target_department || 'All');
+    setTargetSection(event.target_section || 'All');
+    if (event.poster_url) {
+      setPosterPreview(getMediaUrl(event.poster_url));
+    } else {
+      setPosterPreview(null);
+    }
+    setPoster(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const resetForm = () => {
+    setEditingEventId(null);
+    setTitle('');
+    setDescription('');
+    setVenue('');
+    setDateTime('');
+    setDeadline('');
+    setMaxSeats(100);
+    setPoster(null);
+    setPosterPreview(null);
+    setTargetDepartment('All');
+    setTargetSection('All');
+  };
+
   const handleCreateEvent = async (e) => {
     e.preventDefault();
     setMessage({ text: '', type: '' });
@@ -62,26 +106,25 @@ const AdminEvents = () => {
     }
 
     try {
-      await api.post('events/events/', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      setMessage({ text: 'Event published successfully!', type: 'success' });
+      if (editingEventId) {
+        await api.put(`events/events/${editingEventId}/`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        setMessage({ text: 'Event updated successfully!', type: 'success' });
+      } else {
+        await api.post('events/events/', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        setMessage({ text: 'Event published successfully!', type: 'success' });
+      }
       fetchEvents();
-      // Clear inputs
-      setTitle('');
-      setDescription('');
-      setVenue('');
-      setDateTime('');
-      setDeadline('');
-      setMaxSeats(100);
-      setPoster(null);
-      setPosterPreview(null);
-      setTargetDepartment('All');
-      setTargetSection('All');
+      resetForm();
     } catch (err) {
-      setMessage({ text: 'Failed to publish event. Please check inputs.', type: 'error' });
+      setMessage({ text: editingEventId ? 'Failed to update event. Please check inputs.' : 'Failed to publish event. Please check inputs.', type: 'error' });
     }
   };
   const generateBannerImage = () => {
@@ -223,9 +266,21 @@ const AdminEvents = () => {
         {/* Left Column: Create Event Form */}
         <div>
           <GlassContainer className="space-y-4">
-            <h3 className="text-base font-bold text-brand-text dark:text-brand-text-dark border-b border-brand-border/20 pb-2 flex items-center gap-1.5">
-              <Plus className="w-5 h-5 text-accent" /> Publish New Event
-            </h3>
+            <div className="flex items-center justify-between border-b border-brand-border/20 pb-2">
+              <h3 className="text-base font-bold text-brand-text dark:text-brand-text-dark flex items-center gap-1.5">
+                {editingEventId ? <Edit2 className="w-5 h-5 text-accent" /> : <Plus className="w-5 h-5 text-accent" />}
+                {editingEventId ? 'Edit Event Details' : 'Publish New Event'}
+              </h3>
+              {editingEventId && (
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="text-xs font-bold text-rose-500 hover:underline cursor-pointer"
+                >
+                  Cancel Edit
+                </button>
+              )}
+            </div>
 
             <form onSubmit={handleCreateEvent} className="space-y-3.5">
               <div>
@@ -451,12 +506,23 @@ const AdminEvents = () => {
                 </div>
               </div>
 
-              <button
-                type="submit"
-                className="w-full py-2.5 rounded-xl bg-accent hover:bg-accent/95 text-white font-bold text-xs shadow-md shadow-accent/20 cursor-pointer"
-              >
-                Publish Event
-              </button>
+              <div className="flex gap-2 pt-1">
+                {editingEventId && (
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="w-1/3 py-2.5 rounded-xl bg-brand-border/20 text-brand-text dark:text-brand-text-dark font-bold text-xs hover:bg-brand-border/30 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className={`${editingEventId ? 'w-2/3' : 'w-full'} py-2.5 rounded-xl bg-accent hover:bg-accent/95 text-white font-bold text-xs shadow-md shadow-accent/20 cursor-pointer transition`}
+                >
+                  {editingEventId ? 'Save Event Changes' : 'Publish Event'}
+                </button>
+              </div>
             </form>
           </GlassContainer>
         </div>
@@ -505,10 +571,17 @@ const AdminEvents = () => {
 
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
-                      onClick={() => viewAttendees(event.id, event.title)}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-border/25 dark:bg-brand-border-dark/20 text-xs font-bold text-accent hover:bg-brand-border/40 cursor-pointer"
+                      onClick={() => openEditEvent(event)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-accent/10 hover:bg-accent/20 text-xs font-bold text-accent border border-accent/20 cursor-pointer transition"
+                      title="Edit event details"
                     >
-                      <Users className="w-4 h-4" /> View Attendees
+                      <Edit2 className="w-4 h-4" /> Edit
+                    </button>
+                    <button
+                      onClick={() => viewAttendees(event.id, event.title)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-brand-border/25 dark:bg-brand-border-dark/20 text-xs font-bold text-brand-text/80 dark:text-brand-text-dark/80 hover:bg-brand-border/40 cursor-pointer"
+                    >
+                      <Users className="w-4 h-4 text-accent" /> Attendees
                     </button>
                     <button
                       onClick={() => handleDeleteEvent(event.id, event.title)}

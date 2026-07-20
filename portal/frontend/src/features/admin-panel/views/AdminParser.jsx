@@ -230,18 +230,72 @@ const AdminParser = () => {
     setGridData(updated);
   };
 
-  // Add row
+  // Single row insertion states (on the basis of Day Order & Period preset)
+  const [newSlotDayOrder, setNewSlotDayOrder] = useState('I');
+  const [newSlotPreset, setNewSlotPreset] = useState('1');
+  const [newSlotType, setNewSlotType] = useState('class');
+
+  const handleAddSingleSlot = () => {
+    let pNum = 1;
+    let sTime = '09:15:00';
+    let eTime = '10:05:00';
+    let sType = newSlotType || 'class';
+    let sCode = '';
+    let sName = '';
+
+    switch (newSlotPreset) {
+      case '1': pNum = 1; sTime = '09:15:00'; eTime = '10:05:00'; break;
+      case '2': pNum = 2; sTime = '10:05:00'; eTime = '10:55:00'; break;
+      case 'b1': pNum = 0; sTime = '10:55:00'; eTime = '11:05:00'; sType = 'break'; sCode = 'BREAK'; sName = 'Break'; break;
+      case '3': pNum = 3; sTime = '11:05:00'; eTime = '11:55:00'; break;
+      case '4': pNum = 4; sTime = '11:55:00'; eTime = '12:45:00'; break;
+      case 'lunch': pNum = 0; sTime = '12:45:00'; eTime = '13:25:00'; sType = 'lunch'; sCode = 'LUNCH'; sName = 'Lunch Break'; break;
+      case '5': pNum = 5; sTime = '13:25:00'; eTime = '14:15:00'; break;
+      case '6': pNum = 6; sTime = '14:15:00'; eTime = '15:05:00'; break;
+      case 'b2': pNum = 0; sTime = '15:05:00'; eTime = '15:15:00'; sType = 'break'; sCode = 'BREAK'; sName = 'Break'; break;
+      case '7': pNum = 7; sTime = '15:15:00'; eTime = '16:00:00'; break;
+      case '8': pNum = 8; sTime = '16:00:00'; eTime = '16:45:00'; break;
+      default: break;
+    }
+
+    const newRow = {
+      day_order: newSlotDayOrder,
+      period_number: pNum,
+      start_time: sTime,
+      end_time: eTime,
+      subject_code: sCode,
+      subject_name: sName,
+      slot_type: sType,
+      faculty_name: '',
+      department: selectedDept,
+      semester: selectedSemester,
+      section: selectedSection,
+      batch: selectedBatch
+    };
+
+    setGridData(prev => [...prev, newRow]);
+    setDocumentType('timetable');
+    setMessage({ 
+      text: `Added single period slot (Day Order ${newSlotDayOrder}, Period ${pNum || sType.toUpperCase()}) to grid table. Fill subject details and click Commit.`, 
+      type: 'success' 
+    });
+  };
+
+  // Add generic row
   const addRow = () => {
     if (gridData.length === 0) {
       const template = {
-        day_of_week: 'Monday',
+        day_order: 'I',
         period_number: '1',
-        start_time: '09:00:00',
-        end_time: '09:50:00',
+        start_time: '09:15:00',
+        end_time: '10:05:00',
+        subject_code: '',
         subject_name: '',
-        faculty_email: ''
+        slot_type: 'class',
+        faculty_name: ''
       };
       setGridData([template]);
+      setDocumentType('timetable');
       return;
     }
     const template = { ...gridData[0] };
@@ -302,16 +356,26 @@ const AdminParser = () => {
         setMessage({ text: 'Campus Event published successfully!', type: 'success' });
       }
     } catch (err) {
-      console.error(err);
+      console.error("Save to DB Error:", err);
       let errMsg = 'Failed to save parsed data to DB.';
       if (err.response?.data) {
-        if (err.response.data.errors) {
-          errMsg = `Validation failed: ${err.response.data.errors.map(e => `Row ${e.index + 1}: ${JSON.stringify(e.errors)}`).join('; ')}`;
-        } else if (typeof err.response.data === 'object') {
-          errMsg = JSON.stringify(err.response.data);
+        const data = err.response.data;
+        if (data.errors && Array.isArray(data.errors)) {
+          errMsg = `Save failed (${data.errors.length} issue(s)): ` + 
+            data.errors.map(e => `Row ${e.index + 1}: ${typeof e.errors === 'object' ? JSON.stringify(e.errors) : e.errors}`).join(' | ');
+        } else if (data.error) {
+          errMsg = data.error;
+        } else if (data.detail) {
+          errMsg = data.detail;
+        } else if (data.message) {
+          errMsg = data.message;
+        } else if (typeof data === 'object') {
+          errMsg = JSON.stringify(data);
         } else {
-          errMsg = err.response.data;
+          errMsg = String(data);
         }
+      } else if (err.message) {
+        errMsg = `Connection Error: ${err.message}. Please verify backend server and database connection.`;
       }
       setMessage({ text: errMsg, type: 'error' });
     }
@@ -395,7 +459,7 @@ const AdminParser = () => {
               Supports Image uploads (PNG, JPEG), Excel, Word, or PDF documents.
             </p>
 
-            <div className="flex flex-col items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <input
                 type="file"
                 ref={fileInputRef}
@@ -408,6 +472,14 @@ const AdminParser = () => {
                 className="px-5 py-3 md:py-2.5 rounded-xl border border-brand-border dark:border-brand-border-dark/45 text-xs font-bold text-brand-text dark:text-brand-text-dark hover:bg-brand-border/20 transition-all cursor-pointer min-h-[44px] flex items-center justify-center"
               >
                 {file ? file.name : 'Select File from Computer / Device'}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleAddSingleSlot}
+                className="px-4 py-2.5 rounded-xl border border-accent/40 bg-accent/10 hover:bg-accent/20 text-accent text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" /> Add Single Slot Manually
               </button>
 
               {file && (
@@ -487,6 +559,82 @@ const AdminParser = () => {
         </div>
 
       </div>
+
+      {/* Single Slot Manual Builder Panel (For Timetables) */}
+      <GlassContainer className="p-4 bg-accent/5 border border-accent/20 space-y-3">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <h4 className="text-xs font-black uppercase text-accent tracking-wider flex items-center gap-1.5">
+              <Plus className="w-4 h-4" /> Add Single Row (Period Slot Selector)
+            </h4>
+            <p className="text-[11px] text-brand-text/60 dark:text-brand-text-dark/65">
+              Select Day Order &amp; Period preset to append single timetable period slots directly into the table grid.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <div>
+              <span className="block text-[9px] font-extrabold uppercase text-brand-text/50 dark:text-brand-text-dark/50">Day Order</span>
+              <select
+                value={newSlotDayOrder}
+                onChange={(e) => setNewSlotDayOrder(e.target.value)}
+                className="px-2.5 py-1.5 rounded-lg border border-brand-border bg-white dark:bg-brand-card-dark text-xs font-bold outline-none"
+              >
+                <option value="I">Day Order I</option>
+                <option value="II">Day Order II</option>
+                <option value="III">Day Order III</option>
+                <option value="IV">Day Order IV</option>
+                <option value="V">Day Order V</option>
+              </select>
+            </div>
+
+            <div>
+              <span className="block text-[9px] font-extrabold uppercase text-brand-text/50 dark:text-brand-text-dark/50">Period &amp; Time</span>
+              <select
+                value={newSlotPreset}
+                onChange={(e) => setNewSlotPreset(e.target.value)}
+                className="px-2.5 py-1.5 rounded-lg border border-brand-border bg-white dark:bg-brand-card-dark text-xs font-bold outline-none"
+              >
+                <option value="1">Period 1 (09:15 - 10:05)</option>
+                <option value="2">Period 2 (10:05 - 10:55)</option>
+                <option value="b1">Short Break (10:55 - 11:05)</option>
+                <option value="3">Period 3 (11:05 - 11:55)</option>
+                <option value="4">Period 4 (11:55 - 12:45)</option>
+                <option value="lunch">Lunch Break (12:45 - 13:25)</option>
+                <option value="5">Period 5 (13:25 - 14:15)</option>
+                <option value="6">Period 6 (14:15 - 15:05)</option>
+                <option value="b2">Short Break (15:05 - 15:15)</option>
+                <option value="7">Period 7 (15:15 - 16:00)</option>
+                <option value="8">Period 8 (16:00 - 16:45)</option>
+              </select>
+            </div>
+
+            <div>
+              <span className="block text-[9px] font-extrabold uppercase text-brand-text/50 dark:text-brand-text-dark/50">Slot Type</span>
+              <select
+                value={newSlotType}
+                onChange={(e) => setNewSlotType(e.target.value)}
+                className="px-2.5 py-1.5 rounded-lg border border-brand-border bg-white dark:bg-brand-card-dark text-xs font-bold outline-none"
+              >
+                <option value="class">Regular Class</option>
+                <option value="lab">Lab / Practical</option>
+                <option value="break">Short Break</option>
+                <option value="lunch">Lunch Break</option>
+              </select>
+            </div>
+
+            <div className="pt-3.5">
+              <button
+                type="button"
+                onClick={handleAddSingleSlot}
+                className="px-3.5 py-1.5 rounded-lg bg-accent hover:bg-accent/90 text-white font-bold text-xs shadow cursor-pointer flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Slot Row
+              </button>
+            </div>
+          </div>
+        </div>
+      </GlassContainer>
 
       {/* Spreadsheet Edit Grid */}
       {gridData.length > 0 && (

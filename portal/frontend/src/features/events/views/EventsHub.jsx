@@ -9,6 +9,7 @@ const EventsHub = () => {
   const [submittingId, setSubmittingId] = useState(null);
   const [msg, setMsg] = useState({ text: '', type: '' });
   const [selectedPoster, setSelectedPoster] = useState(null);
+  const [failedPosters, setFailedPosters] = useState({});
 
   const fetchEvents = async () => {
     try {
@@ -107,6 +108,7 @@ const EventsHub = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {events.map((event) => {
             const hasPassed = new Date() > new Date(event.registration_deadline);
+            const showPoster = event.poster_url && !failedPosters[event.id];
             return (
               <GlassContainer 
                 key={event.id} 
@@ -115,18 +117,19 @@ const EventsHub = () => {
                 {/* Visual Header / Poster */}
                 <div 
                   onClick={() => {
-                    if (event.poster_url) {
+                    if (showPoster) {
                       const url = getMediaUrl(event.poster_url);
                       setSelectedPoster(url);
                     }
                   }}
-                  className={`relative h-48 w-full overflow-hidden group ${event.poster_url ? 'cursor-pointer' : ''} bg-gradient-to-tr from-accent/90 to-primary/45 flex items-end p-4 text-white`}
+                  className={`relative h-48 w-full overflow-hidden group ${showPoster ? 'cursor-pointer' : ''} bg-gradient-to-tr from-accent/90 to-primary/45 flex items-end p-4 text-white`}
                 >
-                  {event.poster_url ? (
+                  {showPoster ? (
                     <>
                       <img 
                         src={getMediaUrl(event.poster_url)} 
                         alt={event.title} 
+                        onError={() => setFailedPosters(prev => ({ ...prev, [event.id]: true }))}
                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       />
                       {/* Gradient overlay for text readability */}

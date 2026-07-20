@@ -79,15 +79,3 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"Notification for {self.user.email}: {self.title}"
-
-    def save(self, *args, **kwargs):
-        is_new = self.pk is None
-        super().save(*args, **kwargs)
-        if is_new:
-            try:
-                from utils.email import send_email
-                subject = f"[FreshVerse] {self.title}"
-                body = f"Hello {self.user.first_name or 'User'},\n\nYou have a new notification on your FreshVerse dashboard:\n\n{self.message}\n\nBest regards,\nFreshVerse Admin Team"
-                send_email(subject, body, [self.user.email])
-            except Exception as e:
-                print(f"Failed to send notification email to {self.user.email}: {e}")

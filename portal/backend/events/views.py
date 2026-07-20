@@ -146,7 +146,7 @@ class EventViewSet(viewsets.ModelViewSet):
                     to=[user.email]
                 )
 
-            # Dispatch Alert Email & Dashboard Notification to Superadmins & Event Creator
+            # Dispatch Single Alert Email & Dashboard Notification to Superadmin / Admins
             from django.db.models import Q
             admin_users = User.objects.filter(Q(is_superuser=True) | Q(role='admin')).distinct()
             
@@ -160,6 +160,8 @@ class EventViewSet(viewsets.ModelViewSet):
             admin_emails = list(admin_users.exclude(email='').values_list('email', flat=True))
             if event.created_by and event.created_by.email and event.created_by.email not in admin_emails:
                 admin_emails.append(event.created_by.email)
+
+            admin_emails = list(dict.fromkeys([e.strip() for e in admin_emails if e and isinstance(e, str) and e.strip()]))
 
             if admin_emails:
                 send_email(
@@ -232,7 +234,7 @@ class EventViewSet(viewsets.ModelViewSet):
                     to=[user.email]
                 )
 
-            # Dispatch Cancellation Alert Email & Dashboard Notification to Superadmins & Event Creator
+            # Dispatch Single Cancellation Alert Email & Dashboard Notification to Superadmin / Admins
             from django.db.models import Q
             admin_users = User.objects.filter(Q(is_superuser=True) | Q(role='admin')).distinct()
             
@@ -246,6 +248,8 @@ class EventViewSet(viewsets.ModelViewSet):
             admin_emails = list(admin_users.exclude(email='').values_list('email', flat=True))
             if event.created_by and event.created_by.email and event.created_by.email not in admin_emails:
                 admin_emails.append(event.created_by.email)
+
+            admin_emails = list(dict.fromkeys([e.strip() for e in admin_emails if e and isinstance(e, str) and e.strip()]))
 
             if admin_emails:
                 send_email(

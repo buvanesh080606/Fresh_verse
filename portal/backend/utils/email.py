@@ -5,8 +5,7 @@ from django.conf import settings
 
 def send_email(subject: str, body: str, to: list[str]) -> None:
     """
-    Send an email using Resend API over HTTPS (works on Render free tier).
-    Falls back to console logging if RESEND_API_KEY is not set.
+    Send emails directly to intended student/faculty recipients using Resend API.
     Runs in a background thread to avoid blocking web requests.
     """
     def _send():
@@ -14,39 +13,48 @@ def send_email(subject: str, body: str, to: list[str]) -> None:
         if not api_key:
             print(f"[Email - Console Fallback] To: {to}\nSubject: {subject}\n{body}", flush=True)
             return
-        
+
+        if isinstance(to, str):
+            recipients = [to]
+        else:
+            recipients = [email.strip() for email in to if email and isinstance(email, str) and email.strip()]
+
+        if not recipients:
+            return
+
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+
+        # Send directly to recipient emails
         try:
-            original_to = ", ".join(to)
-            sandbox_recipient = "vsbuvaneshraj06@gmail.com"
-            
-            modified_subject = f"[For: {original_to}] {subject}"
-            modified_body = (
-                f"--- SANDBOX FORWARDED EMAIL ---\n"
-                f"Original Recipient: {original_to}\n"
-                f"---------------------------------\n\n"
-                f"{body}"
-            )
-            
             payload = {
                 "from": "FreshVerse Portal <onboarding@resend.dev>",
-                "to": [sandbox_recipient],
-                "subject": modified_subject,
-                "text": modified_body,
+                "to": recipients,
+                "subject": subject,
+                "text": body,
             }
-            
-            headers = {
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            }
-            
             response = requests.post("https://api.resend.com/emails", json=payload, headers=headers, timeout=10)
             if response.status_code in [200, 201, 202]:
-                print(f"Resend Success (Sandbox Forwarded): Original recipient: {original_to} | Sent to: {sandbox_recipient} | Response: {response.text}", flush=True)
+                print(f"Resend Direct Email Success to {recipients} | Response: {response.text}", flush=True)
             else:
-                print(f"Resend API Error (Status {response.status_code}) sending for {original_to}: {response.text}", flush=True)
+                print(f"Resend Batch Delivery Notice ({response.status_code}): {response.text}. Retrying individually...", flush=True)
+                for single_recipient in recipients:
+                    single_payload = {
+                        "from": "FreshVerse Portal <onboarding@resend.dev>",
+                        "to": [single_recipient],
+                        "subject": subject,
+                        "text": body,
+                    }
+                    r = requests.post("https://api.resend.com/emails", json=single_payload, headers=headers, timeout=10)
+                    if r.status_code in [200, 201, 202]:
+                        print(f"Resend Individual Email Success to {single_recipient}", flush=True)
+                    else:
+                        print(f"Resend API Notice for {single_recipient} ({r.status_code}): {r.text}", flush=True)
         except Exception as e:
-            print(f"Resend Connection Exception sending for {to}: {e}", flush=True)
+            print(f"Resend Connection Exception sending for {recipients}: {e}", flush=True)
 
     thread = threading.Thread(target=_send, daemon=True)
     thread.start()

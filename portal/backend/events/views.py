@@ -44,6 +44,35 @@ class EventViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
+    def perform_destroy(self, instance):
+        # Notify all registered students when an event is cancelled/deleted by admin
+        registrations = instance.registrations.filter(status='registered')
+        recipient_emails = []
+        for reg in registrations:
+            student_user = reg.student.user
+            Notification.objects.create(
+                user=student_user,
+                title="Event Cancelled by Admin",
+                message=f"The event '{instance.title}' scheduled for {instance.date_time.strftime('%Y-%m-%d')} has been cancelled by the administration."
+            )
+            if student_user.email:
+                recipient_emails.append(student_user.email)
+
+        if recipient_emails:
+            from utils.email import send_email
+            send_email(
+                subject=f"⚠️ Event Cancelled: {instance.title}",
+                body=(
+                    f"Dear Student,\n\n"
+                    f"Please be informed that the campus event '{instance.title}' scheduled for {instance.date_time.strftime('%B %d, %Y at %I:%M %p')} has been cancelled by the administration.\n\n"
+                    f"We apologize for any inconvenience caused.\n\n"
+                    f"Best regards,\nFreshVerse Campus Administration"
+                ),
+                to=list(set(recipient_emails))
+            )
+
+        instance.delete()
+
     @action(detail=True, methods=['post'])
     def register(self, request, pk=None):
         event = self.get_object()
@@ -95,6 +124,25 @@ class EventViewSet(viewsets.ModelViewSet):
                 message=f"You have registered successfully for {event.title}. Venue: {event.venue}. Date: {event.date_time.strftime('%Y-%m-%d %I:%M %p')}."
             )
 
+            # Dispatch Confirmation Email
+            if user.email:
+                from utils.email import send_email
+                send_email(
+                    subject=f"🎟️ Event Registration Confirmed: {event.title}",
+                    body=(
+                        f"Hello {user.first_name or user.username},\n\n"
+                        f"Your registration for '{event.title}' has been successfully confirmed!\n\n"
+                        f"EVENT DETAILS:\n"
+                        f"• Event Title: {event.title}\n"
+                        f"• Date & Time: {event.date_time.strftime('%B %d, %Y at %I:%M %p')}\n"
+                        f"• Venue: {event.venue}\n"
+                        f"• Target Department: {event.target_department}\n\n"
+                        f"Please present your student ID at the venue.\n\n"
+                        f"Best regards,\nFreshVerse Events Team"
+                    ),
+                    to=[user.email]
+                )
+
         return Response({
             'message': 'Successfully registered for event',
             'registration': EventRegistrationSerializer(registration).data
@@ -124,6 +172,24 @@ class EventViewSet(viewsets.ModelViewSet):
                 title="Event Registration Cancelled",
                 message=f"Your registration for {event.title} has been cancelled."
             )
+
+            # Dispatch Cancellation Email
+            if user.email:
+                from utils.email import send_email
+                send_email(
+                    subject=f"❌ Event Registration Cancelled: {event.title}",
+                    body=(
+                        f"Hello {user.first_name or user.username},\n\n"
+                        f"This is to confirm that your registration for '{event.title}' has been cancelled.\n\n"
+                        f"EVENT DETAILS:\n"
+                        f"• Event Title: {event.title}\n"
+                        f"• Date: {event.date_time.strftime('%B %d, %Y at %I:%M %p')}\n"
+                        f"• Venue: {event.venue}\n\n"
+                        f"If you did not request this cancellation or have any questions, please contact campus support.\n\n"
+                        f"Best regards,\nFreshVerse Events Team"
+                    ),
+                    to=[user.email]
+                )
 
             return Response({'message': 'Registration cancelled successfully'}, status=status.HTTP_200_OK)
         except EventRegistration.DoesNotExist:
